@@ -32,6 +32,11 @@ final class Planilha
         'data de finalizacao' => 'data_finalizacao',
         'hora de finalizacao' => 'hora_finalizacao',
         'observacoes' => 'observacoes',
+        'valor' => 'valor',
+        'valor gasto' => 'valor',
+        'valor gasto (r$)' => 'valor',
+        'prejuizo' => 'valor',
+        'custo' => 'valor',
     ];
 
     private const CAMPOS_DATA = ['data', 'data_fabricacao', 'data_finalizacao'];
@@ -244,7 +249,11 @@ final class Planilha
             $linha = [$r['numero'] ?? ''];
             foreach (array_keys(Sac::CAMPOS) as $c) {
                 $v = $r[$c] ?? '';
-                $linha[] = in_array($c, self::CAMPOS_DATA, true) ? data_br($v) : $v;
+                $linha[] = match (true) {
+                    in_array($c, self::CAMPOS_DATA, true) => data_br($v),
+                    $c === 'valor' => $v === null || $v === '' ? '' : number_format((float) $v, 2, ',', ''),
+                    default => $v,
+                };
             }
             $linha[] = ($r['status'] ?? '') === 'finalizado' ? 'Finalizado' : 'Aberto';
             $linha[] = isset($r['tempo_resolucao_h']) ? number_format((float) $r['tempo_resolucao_h'], 2, ',', '') : '';

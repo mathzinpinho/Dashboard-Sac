@@ -15,6 +15,8 @@ interface Store
     public function insert(string $col, array $doc): string;
     public function update(string $col, string $id, array $campos): void;
     public function delete(string $col, string $id): void;
+    /** Apaga todos os documentos da coleção e retorna quantos eram */
+    public function deleteAll(string $col): int;
     public function nextSeq(string $nome): int;
 }
 
@@ -102,6 +104,13 @@ final class MongoStore implements Store
         $bulk = new MongoDB\Driver\BulkWrite();
         $bulk->delete(['_id' => $this->oid($id)], ['limit' => 1]);
         $this->m->executeBulkWrite($this->ns($col), $bulk);
+    }
+
+    public function deleteAll(string $col): int
+    {
+        $bulk = new MongoDB\Driver\BulkWrite();
+        $bulk->delete([], ['limit' => 0]);
+        return (int) $this->m->executeBulkWrite($this->ns($col), $bulk)->getDeletedCount();
     }
 
     public function nextSeq(string $nome): int
@@ -204,6 +213,13 @@ final class JsonStore implements Store
     public function delete(string $col, string $id): void
     {
         $this->gravar($col, array_filter($this->ler($col), fn($d) => $d['id'] !== $id));
+    }
+
+    public function deleteAll(string $col): int
+    {
+        $n = count($this->ler($col));
+        $this->gravar($col, []);
+        return $n;
     }
 
     public function nextSeq(string $nome): int

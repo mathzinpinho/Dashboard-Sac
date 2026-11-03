@@ -78,6 +78,13 @@ function duracao(?float $horas): string
     return number_format($horas / 24, 1, ',', '.') . ' dias';
 }
 
+/** 1234.5 -> "R$ 1.234,50" (null -> "—") */
+function moeda(?float $v, bool $centavos = true): string
+{
+    if ($v === null) return '—';
+    return 'R$ ' . number_format($v, $centavos ? 2 : 0, ',', '.');
+}
+
 function numero(int|float $n): string
 {
     return number_format($n, 0, ',', '.');

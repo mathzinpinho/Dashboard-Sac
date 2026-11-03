@@ -8,21 +8,25 @@ $atrasados = count(array_filter($ind['lista_abertos'], fn($r) => ($r['dias_abert
 $filtroLista = array_filter(['de' => $de, 'ate' => $ate, 'tipo' => $_GET['tipo'] ?? '']);
 $linkLista = fn(array $extra = []) => '/reclamacoes?' . http_build_query(array_merge($filtroLista, $extra));
 
-/** Lista ranqueada com barra horizontal; cada linha abre a lista filtrada */
-$ranking = function (string $titulo, array $dados, string $vazio = 'Sem registros no período.') use ($linkLista, $ind) {
-    $max = $dados ? max($dados) : 0; ?>
+/** Lista ranqueada com barra horizontal; cada linha abre a lista filtrada. $dinheiro: valores em R$ */
+$ranking = function (string $titulo, array $dados, string $vazio = 'Sem registros no período.', bool $dinheiro = false) use ($linkLista, $ind) {
+    $max = $dados ? max($dados) : 0;
+    $base = $dinheiro ? max(0.01, $ind['valor_total']) : max(1, $ind['total']); ?>
     <section class="cartao">
         <h2><?= e($titulo) ?></h2>
         <?php if (!$dados): ?>
             <p class="mudo"><?= e($vazio) ?></p>
         <?php else: ?>
-            <ol class="ranking">
-                <?php foreach ($dados as $rotulo => $qtd): ?>
+            <ol class="ranking <?= $dinheiro ? 'ranking-dinheiro' : '' ?>">
+                <?php foreach ($dados as $rotulo => $qtd):
+                    $texto = $dinheiro ? moeda((float) $qtd) : $qtd . ' SAC' . ($qtd > 1 ? 's' : '');
+                    $pct = round($qtd / $base * 100) . '% ' . ($dinheiro ? 'do prejuízo' : 'do total');
+                    ?>
                     <li>
-                        <a href="<?= e($linkLista(['q' => $rotulo])) ?>" data-dica="<?= e($rotulo) ?>: <?= $qtd ?> SAC<?= $qtd > 1 ? 's' : '' ?> (<?= round($qtd / max(1, $ind['total']) * 100) ?>% do total)">
+                        <a href="<?= e($linkLista(['q' => $rotulo])) ?>" data-dica="<?= e($rotulo) ?>: <?= e($texto) ?> (<?= $pct ?>)">
                             <span class="r-rotulo"><?= e($rotulo) ?></span>
-                            <span class="r-trilho"><span class="r-barra" style="width: <?= max(2, round($qtd / $max * 100)) ?>%"></span></span>
-                            <span class="r-valor"><?= $qtd ?></span>
+                            <span class="r-trilho"><span class="r-barra" style="width: <?= $max > 0 ? max(2, round($qtd / $max * 100)) : 2 ?>%"></span></span>
+                            <span class="r-valor"><?= $dinheiro ? e(moeda((float) $qtd, false)) : $qtd ?></span>
                         </a>
                     </li>
                 <?php endforeach ?>
@@ -69,12 +73,20 @@ $ranking = function (string $titulo, array $dados, string $vazio = 'Sem registro
     </select>
 </form>
 
+
 <div class="kpis">
     <a class="kpi" href="<?= e($linkLista()) ?>">
         <span class="kpi-rotulo">Total de SACs</span>
         <strong><?= numero($ind['total']) ?></strong>
         <span class="kpi-sub"><?= $ind['tipo_principal'] ? 'Principal: ' . e($ind['tipo_principal']) : '—' ?></span>
     </a>
+    <div class="kpi kpi-prejuizo">
+        <span class="kpi-rotulo">Prejuízo</span>
+        <strong><?= moeda($ind['valor_total'], $ind['valor_total'] < 10000) ?></strong>
+        <span class="kpi-sub">
+            <?= $ind['com_valor'] ? 'Média ' . moeda($ind['valor_medio']) . ' em ' . $ind['com_valor'] . ' SAC' . ($ind['com_valor'] > 1 ? 's' : '') : 'Nenhum valor lançado' ?>
+        </span>
+    </div>
     <a class="kpi" href="<?= e($linkLista(['status' => 'aberto'])) ?>">
         <span class="kpi-rotulo">Em aberto</span>
         <strong><?= numero($ind['abertos']) ?></strong>
@@ -104,34 +116,55 @@ $ranking = function (string $titulo, array $dados, string $vazio = 'Sem registro
     </div>
 </div>
 
-<section class="cartao">
-    <h2>SACs por mês</h2>
-    <?php if (!$ind['por_mes']): ?>
-        <p class="mudo">Sem registros no período.</p>
-    <?php else:
-        $max = max($ind['por_mes']) ?: 1;
-        $topo = (int) (ceil($max / 5) * 5) ?: 5;
-        $pico = array_search(max($ind['por_mes']), $ind['por_mes'], true);
-        $ultimo = array_key_last($ind['por_mes']);
-        ?>
-        <div class="colunas" style="--n: <?= count($ind['por_mes']) ?>">
-            <div class="eixo-y" aria-hidden="true">
-                <span><?= $topo ?></span><span><?= $topo / 2 ?></span><span>0</span>
+<?php
+/** Gráfico de colunas por mês. $dinheiro: valores em R$ */
+$colunas = function (string $titulo, array $serie, bool $dinheiro = false) use ($linkLista) { ?>
+    <section class="cartao">
+        <h2><?= e($titulo) ?></h2>
+        <?php if (!$serie): ?>
+            <p class="mudo"><?= $dinheiro ? 'Nenhum valor gasto lançado no período.' : 'Sem registros no período.' ?></p>
+        <?php else:
+            $max = max($serie) ?: 1;
+            // topo do eixo arredondado para 1, 2, 2,5 ou 5 × 10^n
+            $passo = 10 ** floor(log10($max));
+            $topo = $passo * 10;
+            foreach ([1, 2, 2.5, 5] as $m) if ($m * $passo >= $max) { $topo = $m * $passo; break; }
+            $topo = max($topo, $dinheiro ? 10 : 5);
+            $rot = fn($v) => $dinheiro ? moeda((float) $v, false) : numero($v);
+            $pico = array_search(max($serie), $serie, true);
+            $ultimo = array_key_last($serie);
+            ?>
+            <div class="colunas <?= $dinheiro ? 'colunas-dinheiro' : '' ?>" style="--n: <?= count($serie) ?>">
+                <div class="eixo-y" aria-hidden="true">
+                    <span><?= e($rot($topo)) ?></span><span><?= e($rot($topo / 2)) ?></span><span>0</span>
+                </div>
+                <div class="plot">
+                    <?php foreach ($serie as $mes => $qtd):
+                        $texto = $dinheiro ? moeda((float) $qtd) : $qtd . ' SAC' . ($qtd === 1 ? '' : 's');
+                        ?>
+                        <a class="col" href="<?= e($linkLista(['de' => "$mes-01", 'ate' => date('Y-m-t', strtotime("$mes-01"))])) ?>"
+                           data-dica="<?= e(mes_br($mes, false)) ?>: <?= e($texto) ?>">
+                            <span class="col-barra" style="height: <?= $qtd ? max(1.5, $qtd / $topo * 100) : 0 ?>%">
+                                <?php if ($qtd && ($mes === $pico || $mes === $ultimo)): ?><b><?= e($rot($qtd)) ?></b><?php endif ?>
+                            </span>
+                            <span class="col-rotulo"><?= e(mes_br($mes)) ?></span>
+                        </a>
+                    <?php endforeach ?>
+                </div>
             </div>
-            <div class="plot">
-                <?php foreach ($ind['por_mes'] as $mes => $qtd): ?>
-                    <a class="col" href="<?= e($linkLista(['de' => "$mes-01", 'ate' => date('Y-m-t', strtotime("$mes-01"))])) ?>"
-                       data-dica="<?= e(mes_br($mes, false)) ?>: <?= $qtd ?> SAC<?= $qtd === 1 ? '' : 's' ?>">
-                        <span class="col-barra" style="height: <?= $qtd ? max(1.5, $qtd / $topo * 100) : 0 ?>%">
-                            <?php if ($qtd && ($mes === $pico || $mes === $ultimo)): ?><b><?= $qtd ?></b><?php endif ?>
-                        </span>
-                        <span class="col-rotulo"><?= e(mes_br($mes)) ?></span>
-                    </a>
-                <?php endforeach ?>
-            </div>
-        </div>
-    <?php endif ?>
-</section>
+        <?php endif ?>
+    </section>
+<?php };
+?>
+
+<?php $colunas('SACs por mês', $ind['por_mes']) ?>
+
+<div class="grade">
+    <?php $colunas('Prejuízo por mês', $ind['valor_mes'], true) ?>
+    <?php $ranking('Prejuízo por reclamação', $ind['valor_descricao'], 'Nenhum valor gasto lançado no período.', true) ?>
+    <?php $ranking('Prejuízo por produto', $ind['valor_produto'], 'Nenhum valor gasto lançado no período.', true) ?>
+</div>
+
 
 <div class="grade">
     <?php $ranking('Top reclamações', $ind['top_descricao']) ?>

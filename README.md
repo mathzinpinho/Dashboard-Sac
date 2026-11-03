@@ -20,6 +20,14 @@ Os campos seguem a aba **SAC** da planilha `planilha SAC.xlsx`, e o dashboard re
 | `/reclamacoes/{id}` | Edição e finalização (o tempo de resolução é calculado sozinho) |
 | `/importar` | Importa a planilha .xlsx ou .csv, com prévia. Linhas que já foram importadas são ignoradas |
 
+**Valor gasto:** cada reclamação tem o campo *Valor gasto (R$)* (cupom, reembolso, reenvio...). O dashboard mostra o prejuízo total,
+por mês, por reclamação e por produto (SAC com vários produtos divide o valor igualmente entre eles). A importação reconhece as colunas
+"Valor", "Valor gasto", "Prejuízo" ou "Custo".
+
+**Apagar todas as reclamações:** só administradores, em `/reclamacoes/apagar-tudo` (link no fim da lista). Exige digitar `APAGAR TODAS`,
+a própria senha e marcar a confirmação, e ainda pergunta mais uma vez antes de apagar. Apaga também os anexos no Blob. Fica registrado
+em `sac_auditoria` quem apagou, quando e quantas eram. A numeração dos SACs continua de onde parou.
+
 **Fotos e vídeos:** cada reclamação aceita anexos (até 100 MB por arquivo; fotos grandes são reduzidas para 2000px antes do envio).
 Os arquivos vão direto do navegador para o **Vercel Blob** (store `sac-anexos`, público com nomes aleatórios, região São Paulo),
 autorizados por um token temporário gerado em `/anexos/token`. Anexos removidos de uma reclamação, ou de uma reclamação excluída,

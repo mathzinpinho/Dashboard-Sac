@@ -47,12 +47,8 @@ final class Auth
     // #[\SensitiveParameter]: a senha não aparece em mensagens de erro nem nos logs
     public static function entrar(string $email, #[\SensitiveParameter] string $senha): ?string
     {
-        $u = db()->findOne('usuarios', ['email' => mb_strtolower(trim($email))]);
-        if (!$u || empty($u['senhaHash'])) return null;
-
-        // bcryptjs gera hashes "$2b$"; o PHP usa o prefixo equivalente "$2y$"
-        $hash = preg_replace('/^\$2[ab]\$/', '\$2y\$', $u['senhaHash']);
-        if (!password_verify($senha, $hash)) return null;
+        $u = self::conferirSenha($email, $senha);
+        if (!$u) return null;
 
         $agora = time();
         $token = self::assinar([
@@ -65,6 +61,16 @@ final class Auth
         ]);
         cookie(self::COOKIE, $token, self::VALIDADE);
         return $token;
+    }
+
+    /** Usuário com este e-mail e senha, ou null */
+    public static function conferirSenha(string $email, #[\SensitiveParameter] string $senha): ?array
+    {
+        $u = db()->findOne('usuarios', ['email' => mb_strtolower(trim($email))]);
+        if (!$u || empty($u['senhaHash'])) return null;
+        // bcryptjs gera hashes "$2b$"; o PHP usa o prefixo equivalente "$2y$"
+        $hash = preg_replace('/^\$2[ab]\$/', '\$2y\$', $u['senhaHash']);
+        return password_verify($senha, $hash) ? $u : null;
     }
 
     public static function sair(): void

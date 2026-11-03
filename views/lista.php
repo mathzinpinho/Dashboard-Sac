@@ -41,7 +41,7 @@
                 <thead>
                 <tr>
                     <th>Nº</th><th>Data</th><th>Cliente</th><th>Tipo</th><th>Produto</th><th>Lote</th>
-                    <th>Reclamação</th><th>Status</th><th class="num">Resolução</th>
+                    <th>Reclamação</th><th>Status</th><th class="num">Valor gasto</th><th class="num">Resolução</th>
                 </tr>
                 </thead>
                 <tbody>
@@ -70,6 +70,7 @@
                                 <span class="selo selo-final">✓ Finalizado</span>
                             <?php endif ?>
                         </td>
+                        <td class="num"><?= isset($r['valor']) ? moeda((float) $r['valor']) : '—' ?></td>
                         <td class="num"><?= isset($r['tempo_resolucao_h']) ? duracao((float) $r['tempo_resolucao_h']) : '—' ?></td>
                     </tr>
                 <?php endforeach ?>
@@ -85,4 +86,8 @@
         <span class="mudo">Página <?= $pagina ?> de <?= $paginas ?></span>
         <?php if ($pagina < $paginas): ?><a href="<?= e(qs(['p' => $pagina + 1])) ?>">Próxima ›</a><?php endif ?>
     </nav>
+<?php endif ?>
+
+<?php if (Auth::admin() && $total): ?>
+    <div class="rodape-lista"><a class="link-perigo" href="/reclamacoes/apagar-tudo">Apagar todas as reclamações…</a></div>
 <?php endif ?>

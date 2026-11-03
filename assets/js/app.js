@@ -65,6 +65,24 @@
     });
   }
 
+  // apagar todas: o botão só libera com a frase exata, a senha e a caixa marcada
+  const formApagar = document.querySelector('[data-apagar-tudo]');
+  if (formApagar) {
+    const frase = formApagar.querySelector('[data-frase]');
+    const botao = formApagar.querySelector('[data-botao-apagar]');
+    const conferir = () => {
+      botao.disabled = !(frase.value.trim() === frase.dataset.frase
+        && formApagar.senha.value !== ''
+        && formApagar.entendo.checked);
+    };
+    formApagar.addEventListener('input', conferir);
+    formApagar.addEventListener('change', conferir);
+    formApagar.addEventListener('submit', (ev) => {
+      if (!confirm('Última confirmação: apagar TODAS as reclamações agora?')) ev.preventDefault();
+    });
+    conferir();
+  }
+
   // área de soltar arquivo na importação
   const soltar = document.querySelector('[data-soltar]');
   if (soltar) {

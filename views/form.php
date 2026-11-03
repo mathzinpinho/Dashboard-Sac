@@ -149,6 +149,10 @@ $cls = fn(string $c) => isset($erros[$c]) ? 'com-erro' : '';
             <label class="span-3">Solução / retorno ao cliente
                 <input name="solucao" value="<?= $v('solucao') ?>" list="lista-solucoes" autocomplete="off">
             </label>
+            <label class="<?= $cls('valor') ?>">Valor gasto (R$)
+                <input name="valor" inputmode="decimal" placeholder="0,00" autocomplete="off"
+                       value="<?= isset($r['valor']) && $r['valor'] !== '' && is_numeric($r['valor']) ? e(number_format((float) $r['valor'], 2, ',', '')) : $v('valor') ?>"><?= $erro('valor') ?>
+            </label>
             <label class="<?= $cls('data_finalizacao') ?>">Data de finalização
                 <input type="date" name="data_finalizacao" value="<?= $v('data_finalizacao') ?>"><?= $erro('data_finalizacao') ?>
             </label>
@@ -156,7 +160,10 @@ $cls = fn(string $c) => isset($erros[$c]) ? 'com-erro' : '';
                 <input type="time" name="hora_finalizacao" value="<?= $v('hora_finalizacao') ?>"><?= $erro('hora_finalizacao') ?>
             </label>
         </div>
-        <p class="dica-campo">Com a data de finalização preenchida, o SAC passa para <strong>Finalizado</strong> e o tempo de resolução é calculado.</p>
+        <p class="dica-campo">
+            <strong>Valor gasto:</strong> quanto a empresa perdeu com o caso (cupom, reembolso, reenvio, frete...).
+            Com a data de finalização preenchida, o SAC passa para <strong>Finalizado</strong> e o tempo de resolução é calculado.
+        </p>
     </section>
 
     <div class="rodape-form">

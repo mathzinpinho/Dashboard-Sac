@@ -111,6 +111,37 @@ try {
         exit;
     }
 
+    /* ---------- apagar todas as reclamações (só administradores, com dupla confirmação) ---------- */
+    if ($rota === '/reclamacoes/apagar-tudo') {
+        if (!Auth::admin()) {
+            http_response_code(403);
+            view('erro', ['titulo' => 'Acesso restrito', 'msg' => 'Somente administradores podem apagar todas as reclamações.']);
+            exit;
+        }
+        $frase = 'APAGAR TODAS';
+        $erros = [];
+        if ($metodo === 'POST') {
+            if (trim((string) ($_POST['frase'] ?? '')) !== $frase) $erros['frase'] = "Digite exatamente: $frase";
+            if (!Auth::conferirSenha($usuario['email'], (string) ($_POST['senha'] ?? ''))) $erros['senha'] = 'Senha incorreta.';
+            if (empty($_POST['entendo'])) $erros['entendo'] = 'Marque a confirmação.';
+            if (!$erros) {
+                $n = Sac::apagarTudo($usuario);
+                avisar("$n reclamações foram apagadas.");
+                redirecionar('/reclamacoes');
+            }
+        }
+        $todas = Sac::listar();
+        view('apagar-tudo', [
+            'titulo'   => 'Apagar todas as reclamações',
+            'frase'    => $frase,
+            'erros'    => $erros,
+            'total'    => count($todas),
+            'anexos'   => array_sum(array_map(fn($r) => count($r['anexos'] ?? []), $todas)),
+            'prejuizo' => array_sum(array_map(fn($r) => (float) ($r['valor'] ?? 0), $todas)),
+        ]);
+        exit;
+    }
+
     /* ---------- ver / editar / excluir ---------- */
     if (preg_match('#^/reclamacoes/([A-Za-z0-9]+)(/excluir)?$#', $rota, $m)) {
         $atual = Sac::buscar($m[1]) ?? throw new DomainException('Reclamação não encontrada.');

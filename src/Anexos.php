@@ -83,6 +83,11 @@ final class Anexos
     {
         $urls = array_values(array_filter($urls));
         if (!$urls || !self::ativo()) return;
+        // a API apaga no máximo um lote por chamada
+        if (count($urls) > 100) {
+            foreach (array_chunk($urls, 100) as $lote) self::excluir($lote);
+            return;
+        }
         $ctx = stream_context_create(['http' => [
             'method'        => 'POST',
             'header'        => implode("\r\n", [

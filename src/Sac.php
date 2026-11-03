@@ -22,6 +22,7 @@ final class Sac
         'produto'          => 'Produto',
         'descricao'        => 'Descrição do Atendimento',
         'solucao'          => 'Solução / Retorno',
+        'valor'            => 'Valor gasto (R$)',
         'data_finalizacao' => 'Data de Finalização',
         'hora_finalizacao' => 'Hora de Finalização',
         'observacoes'      => 'Observações',
@@ -51,6 +52,11 @@ final class Sac
         }
         if ($d['data'] === '') $erros['data'] = 'Informe a data da reclamação.';
 
+        // prejuízo da empresa com o atendimento (cupom, reembolso, reenvio...)
+        $valor = self::lerValor($d['valor']);
+        if ($valor === false) $erros['valor'] = 'Valor inválido (ex.: 150,00).';
+        $d['valor'] = $valor === false ? null : $valor;
+
         if ($estrito) {
             if ($d['cliente'] === '' && $d['razao_social'] === '') $erros['razao_social'] = 'Informe o cliente ou a razão social.';
             if ($d['descricao'] === '') $erros['descricao'] = 'Descreva a reclamação.';
@@ -64,6 +70,24 @@ final class Sac
         $d['status'] = $d['data_finalizacao'] !== '' ? 'finalizado' : 'aberto';
         $d['tempo_resolucao_h'] = self::tempoResolucao($d);
         return [$d, $erros];
+    }
+
+    /**
+     * "R$ 1.234,56", "1234,56", "1234.56" ou número da planilha -> 1234.56.
+     * Vazio -> null. Texto que não é valor -> false.
+     */
+    public static function lerValor(string $v): float|null|false
+    {
+        $v = trim(str_ireplace('R$', '', $v));
+        if ($v === '') return null;
+        $v = preg_replace('/\s+/', '', $v);
+        if (str_contains($v, ',')) {
+            $v = str_replace(['.', ','], ['', '.'], $v);          // formato brasileiro
+        } elseif (preg_match('/^\d{1,3}(\.\d{3})+$/', $v)) {
+            $v = str_replace('.', '', $v);                      // "1.234" = mil duzentos e trinta e quatro
+        }
+        if (!is_numeric($v) || (float) $v < 0) return false;
+        return round((float) $v, 2);
     }
 
     /** Mesmo cálculo da coluna "Tempo de Resolução" da planilha: (finalização) - (abertura), em horas */
@@ -103,6 +127,32 @@ final class Sac
     public static function excluir(string $id): void
     {
         db()->delete(self::COL, $id);
+    }
+
+    /**
+     * Apaga TODAS as reclamações e os anexos delas. Fica registrado em "sac_auditoria"
+     * quem apagou, quando, quantas eram e o prejuízo somado. A numeração dos SACs continua de onde parou.
+     */
+    public static function apagarTudo(array $usuario): int
+    {
+        $todas = db()->find(self::COL);
+        $urls = [];
+        foreach ($todas as $r) {
+            foreach ($r['anexos'] ?? [] as $a) $urls[] = $a['url'];
+        }
+        $apagadas = db()->deleteAll(self::COL);
+        db()->insert('sac_auditoria', [
+            'acao'       => 'apagar_todas_reclamacoes',
+            'usuario'    => $usuario['nome'],
+            'email'      => $usuario['email'],
+            'quantidade' => $apagadas,
+            'anexos'     => count($urls),
+            'prejuizo'   => round(array_sum(array_map(fn($r) => (float) ($r['valor'] ?? 0), $todas)), 2),
+            'quando'     => date('c'),
+        ]);
+        error_log("SAC: {$usuario['email']} apagou todas as reclamações ($apagadas registros, " . count($urls) . ' anexos)');
+        Anexos::excluir($urls);
+        return $apagadas;
     }
 
     /** Filtros: de, ate (Y-m-d), tipo, status, q (texto livre) */
@@ -146,6 +196,9 @@ final class Sac
         $porTipo = $porDescricao = $porProduto = $porLote = $porSolucao = $porMes = $porData = [];
         $abertos = [];
         $hoje = date('Y-m-d');
+        $valorTotal = 0.0;
+        $comValor = 0;
+        $valorMes = $valorDescricao = $valorProduto = [];
 
         foreach ($lista as $r) {
             if (!empty($r['tipo'])) $porTipo[$r['tipo']] = ($porTipo[$r['tipo']] ?? 0) + 1;
@@ -159,6 +212,16 @@ final class Sac
                 $porData[$r['data']] = ($porData[$r['data']] ?? 0) + 1;
             }
             if (isset($r['tempo_resolucao_h'])) $tempos[] = (float) $r['tempo_resolucao_h'];
+            if (isset($r['valor']) && $r['valor'] > 0) {
+                $v = (float) $r['valor'];
+                $valorTotal += $v;
+                $comValor++;
+                if (!empty($r['data'])) $valorMes[substr($r['data'], 0, 7)] = ($valorMes[substr($r['data'], 0, 7)] ?? 0) + $v;
+                if (!empty($r['descricao'])) $valorDescricao[$r['descricao']] = ($valorDescricao[$r['descricao']] ?? 0) + $v;
+                // SAC com vários produtos: o valor é dividido igualmente entre eles
+                $prods = self::itens($r['produto'] ?? '');
+                foreach ($prods as $p) $valorProduto[$p] = ($valorProduto[$p] ?? 0) + $v / count($prods);
+            }
             if (($r['status'] ?? '') === 'aberto') {
                 $r['dias_aberto'] = $r['data'] ? (int) floor((strtotime($hoje) - strtotime($r['data'])) / 86400) : null;
                 $abertos[] = $r;
@@ -166,7 +229,7 @@ final class Sac
         }
 
         // eixo de meses contínuo (meses sem SAC aparecem com zero)
-        $meses = [];
+        $meses = $mesesValor = [];
         if ($porMes) {
             $ini = substr($de ?: min(array_keys($porMes)) . '-01', 0, 7);
             $fim = substr($ate ?: max(array_keys($porMes)) . '-01', 0, 7);
@@ -174,6 +237,7 @@ final class Sac
             while ($cursor->format('Y-m') <= $fim && count($meses) < 36) {
                 $k = $cursor->format('Y-m');
                 $meses[$k] = $porMes[$k] ?? 0;
+                $mesesValor[$k] = round($valorMes[$k] ?? 0, 2);
                 $cursor->modify('+1 month');
             }
         }
@@ -199,6 +263,12 @@ final class Sac
             'top_solucao'   => self::ranking($porSolucao, 6),
             'top_datas'     => self::ranking($porData, 6),
             'por_mes'       => $meses,
+            'valor_total'   => round($valorTotal, 2),
+            'valor_medio'   => $comValor ? $valorTotal / $comValor : null,
+            'com_valor'     => $comValor,
+            'valor_mes'     => array_sum($mesesValor) > 0 ? $mesesValor : [],
+            'valor_descricao' => array_map(fn($v) => round($v, 2), self::ranking($valorDescricao)),
+            'valor_produto' => array_map(fn($v) => round($v, 2), self::ranking($valorProduto)),
             'lista_abertos' => $abertos,
         ];
     }
