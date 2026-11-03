@@ -121,7 +121,7 @@ try {
         $frase = 'APAGAR TODAS';
         $erros = [];
         if ($metodo === 'POST') {
-            if (trim((string) ($_POST['frase'] ?? '')) !== $frase) $erros['frase'] = "Digite exatamente: $frase";
+            if (mb_strtoupper(trim((string) ($_POST['frase'] ?? ''))) !== $frase) $erros['frase'] = "Digite exatamente: $frase";
             if (!Auth::conferirSenha($usuario['email'], (string) ($_POST['senha'] ?? ''))) $erros['senha'] = 'Senha incorreta.';
             if (empty($_POST['entendo'])) $erros['entendo'] = 'Marque a confirmação.';
             if (!$erros) {

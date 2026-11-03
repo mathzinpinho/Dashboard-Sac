@@ -327,3 +327,4 @@ form.acoes { margin-top: 16px; justify-content: flex-end; }
 .rodape-lista { display: flex; justify-content: flex-end; }
 .col-barra b { white-space: nowrap; }
 .colunas-dinheiro .col-barra b { font-size: 0.72rem; }
+.invisivel { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; overflow: hidden; }

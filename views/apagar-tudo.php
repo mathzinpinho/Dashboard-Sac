@@ -39,8 +39,12 @@ $cls = fn(string $c) => isset($erros[$c]) ? 'com-erro' : '';
             <span class="passo-n">2</span>
             <div class="campos">
                 <strong>Confirme</strong>
+                <?php /* campo de usuário invisível: o gerenciador de senhas preenche este, e não o da frase */ ?>
+                <input type="email" name="usuario_atual" value="<?= e(Auth::usuario()['email'] ?? '') ?>" autocomplete="username" class="invisivel" tabindex="-1" aria-hidden="true" readonly>
                 <label class="<?= $cls('frase') ?>"><span>Digite <code><?= e($frase) ?></code> para confirmar</span>
-                    <input name="frase" autocomplete="off" spellcheck="false" data-frase="<?= e($frase) ?>"><?= $erro('frase') ?>
+                    <input type="search" name="frase" autocomplete="off" autocapitalize="characters" spellcheck="false"
+                           data-lpignore="true" data-1p-ignore data-bwignore data-form-type="other"
+                           data-frase="<?= e($frase) ?>"><?= $erro('frase') ?>
                 </label>
                 <label class="<?= $cls('senha') ?>">Sua senha
                     <input type="password" name="senha" autocomplete="current-password"><?= $erro('senha') ?>

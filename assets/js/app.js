@@ -70,6 +70,11 @@
   if (formApagar) {
     const frase = formApagar.querySelector('[data-frase]');
     const botao = formApagar.querySelector('[data-botao-apagar]');
+    frase.addEventListener('input', () => {
+      const pos = frase.selectionStart;
+      frase.value = frase.value.toUpperCase();
+      frase.setSelectionRange(pos, pos);
+    });
     const conferir = () => {
       botao.disabled = !(frase.value.trim() === frase.dataset.frase
         && formApagar.senha.value !== ''
