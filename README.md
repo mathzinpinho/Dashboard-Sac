@@ -33,7 +33,7 @@ O site está em **https://sac-casadopadeiro.vercel.app** (projeto `sac-casadopad
 
 Variáveis em **Project Settings → Environment Variables** (Production):
 
-- `MONGODB_URI`: usuário `SACCDP` no mesmo cluster do sistema de produção. A senha deve ter só letras e números; caracteres como `@` e `#` quebram a URI.
+- `MONGODB_URI`: usuário próprio do SAC no mesmo cluster do sistema de produção. A senha deve ter só letras e números; caracteres como `@` e `#` quebram a URI.
 - `JWT_SECRET`: chave própria do SAC (não precisa ser a do sistema de produção)
 - `DB_NAME`: opcional; o padrão é `casadopadeiro`, o mesmo banco do sistema de produção
 
