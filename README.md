@@ -19,17 +19,16 @@ Os campos seguem a aba **SAC** da planilha `planilha SAC.xlsx`, e o dashboard re
 
 As listas de opções (tipos, sugestões de descrição e solução, dias para alerta) ficam em [config/opcoes.php](config/opcoes.php).
 
-## Publicar na Vercel
+## Publicação
 
-1. Suba esta pasta para um repositório no GitHub e importe o repositório na Vercel (ou rode `vercel` nesta pasta).
-2. Em **Project Settings → Environment Variables**, cadastre as variáveis abaixo com os **mesmos valores** do projeto do sistema de produção (homolog):
-   - `MONGODB_URI`
-   - `DB_NAME` (se não estiver definida, usa `casadopadeiro`, igual ao sistema de produção)
-   - `JWT_SECRET`
-3. Faça o deploy. O [vercel.json](vercel.json) já configura o runtime PHP (`vercel-php`) e as rotas.
-4. Entre com o seu usuário do sistema de produção e importe a planilha em **Importar**.
+O site está em **https://sac-casadopadeiro.vercel.app** (projeto `sac-casadopadeiro` na Vercel), ligado a este repositório:
+**todo push no branch `main` publica automaticamente.** O [vercel.json](vercel.json) configura o runtime PHP (`vercel-php`) e as rotas.
 
-> Se o MongoDB Atlas tiver restrição de IP, ele já precisa liberar a Vercel, como faz para o sistema de produção.
+Variáveis em **Project Settings → Environment Variables** (Production):
+
+- `MONGODB_URI`: usuário `SACCDP` no mesmo cluster do sistema de produção. A senha deve ter só letras e números; caracteres como `@` e `#` quebram a URI.
+- `JWT_SECRET`: chave própria do SAC (não precisa ser a do sistema de produção)
+- `DB_NAME`: opcional; o padrão é `casadopadeiro`, o mesmo banco do sistema de produção
 
 ## Rodar no computador
 
