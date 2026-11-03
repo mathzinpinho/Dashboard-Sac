@@ -11,7 +11,7 @@ $aviso = pegar_aviso();
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title><?= e($titulo ?? 'SAC') ?> · SAC Casa do Padeiro</title>
     <link rel="icon" href="/assets/img/logo.png">
-    <link rel="stylesheet" href="/assets/css/app.css?v=1">
+    <link rel="stylesheet" href="/assets/css/app.css?v=2">
 </head>
 <body>
 <header class="topo">
@@ -38,6 +38,6 @@ $aviso = pegar_aviso();
 </main>
 
 <div id="dica" class="dica" role="tooltip" hidden></div>
-<script src="/assets/js/app.js?v=1"></script>
+<script src="/assets/js/app.js?v=2"></script>
 </body>
 </html>

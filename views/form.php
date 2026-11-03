@@ -97,6 +97,49 @@ $cls = fn(string $c) => isset($erros[$c]) ? 'com-erro' : '';
         </div>
     </section>
 
+    <section class="cartao" id="anexos"
+             data-csrf="<?= e(Auth::csrf()) ?>"
+             data-max="<?= Anexos::TAMANHO_MAX ?>"
+             data-pasta="sac/<?= date('Y/m') ?>">
+        <div class="cartao-cab">
+            <h2>Fotos e vídeos</h2>
+            <span class="mudo pequeno" data-anexos-contador></span>
+        </div>
+        <input type="hidden" name="anexos" value="<?= e(json_encode($r['anexos'] ?? [], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)) ?>" data-anexos-campo>
+
+        <div class="anexos-grade" data-anexos-grade>
+            <?php foreach ($r['anexos'] ?? [] as $a): ?>
+                <figure class="anexo" data-url="<?= e($a['url']) ?>">
+                    <a href="<?= e($a['url']) ?>" target="_blank" rel="noopener" class="anexo-midia">
+                        <?php if (Anexos::ehVideo($a)): ?>
+                            <video src="<?= e($a['url']) ?>#t=0.1" preload="metadata" muted></video>
+                            <span class="anexo-play" aria-hidden="true">▶</span>
+                        <?php else: ?>
+                            <img src="<?= e($a['url']) ?>" alt="<?= e($a['nome']) ?>" loading="lazy">
+                        <?php endif ?>
+                    </a>
+                    <figcaption>
+                        <span class="anexo-nome" title="<?= e($a['nome']) ?>"><?= e($a['nome']) ?></span>
+                        <span class="mudo"><?= e(Anexos::tamanho((int) $a['tamanho'])) ?><?= !empty($a['enviado_por']) ? ' · ' . e($a['enviado_por']) : '' ?></span>
+                    </figcaption>
+                    <button type="button" class="anexo-remover" data-remover aria-label="Remover <?= e($a['nome']) ?>">×</button>
+                </figure>
+            <?php endforeach ?>
+        </div>
+
+        <?php if (Anexos::ativo()): ?>
+            <label class="soltar soltar-anexos" data-anexos-soltar>
+                <input type="file" accept="image/*,video/*" multiple data-anexos-input>
+                <strong>Adicionar fotos ou vídeos</strong>
+                <span class="mudo">Toque para escolher ou arraste os arquivos aqui · até <?= Anexos::TAMANHO_MAX / 1048576 ?> MB por arquivo</span>
+            </label>
+            <ul class="envios" data-anexos-envios></ul>
+            <p class="dica-campo">Os anexos ficam gravados na reclamação ao clicar em <strong><?= $novo ? 'Registrar reclamação' : 'Salvar alterações' ?></strong>.</p>
+        <?php else: ?>
+            <p class="mudo pequeno">O envio de anexos não está configurado neste ambiente (variável BLOB_READ_WRITE_TOKEN).</p>
+        <?php endif ?>
+    </section>
+
     <section class="cartao">
         <div class="cartao-cab">
             <h2>Solução / retorno</h2>
@@ -149,4 +192,5 @@ $cls = fn(string $c) => isset($erros[$c]) ? 'com-erro' : '';
 <datalist id="lista-clientes">
     <?php foreach ($sug['clientes'] as $nome => $_): ?><option value="<?= e($nome) ?>"><?php endforeach ?>
 </datalist>
+<?php if (Anexos::ativo()): ?><script type="module" src="/assets/js/anexos.js?v=1"></script><?php endif ?>
 <script type="application/json" id="dados-clientes"><?= json_encode($sug['clientes'], JSON_UNESCAPED_UNICODE | JSON_HEX_TAG) ?></script>

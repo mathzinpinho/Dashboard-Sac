@@ -95,7 +95,9 @@ final class Auth
 
     public static function conferirCsrf(): void
     {
-        if (!hash_equals(self::csrf(), (string) ($_POST['_csrf'] ?? ''))) {
+        // formulários mandam no campo _csrf; chamadas em JSON (envio de anexos), no cabeçalho X-CSRF
+        $enviado = $_POST['_csrf'] ?? $_SERVER['HTTP_X_CSRF'] ?? '';
+        if (!hash_equals(self::csrf(), (string) $enviado)) {
             http_response_code(419);
             exit('Sessão expirada. Volte e tente novamente.');
         }

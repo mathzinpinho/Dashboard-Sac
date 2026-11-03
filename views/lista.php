@@ -50,7 +50,10 @@
                     $dias = $aberto && $r['data'] ? (int) floor((time() - strtotime($r['data'])) / 86400) : 0;
                     ?>
                     <tr data-href="/reclamacoes/<?= e($r['id']) ?>">
-                        <td><a href="/reclamacoes/<?= e($r['id']) ?>"><?= e($r['numero']) ?></a></td>
+                        <td class="nowrap">
+                            <a href="/reclamacoes/<?= e($r['id']) ?>"><?= e($r['numero']) ?></a>
+                            <?php if ($n = count($r['anexos'] ?? [])): ?><span class="clipe" title="<?= $n ?> anexo<?= $n > 1 ? 's' : '' ?>">📎<?= $n ?></span><?php endif ?>
+                        </td>
                         <td class="nowrap"><?= e(data_br($r['data'])) ?> <span class="mudo"><?= e($r['hora']) ?></span></td>
                         <td>
                             <?= e($r['razao_social'] ?: $r['cliente']) ?>

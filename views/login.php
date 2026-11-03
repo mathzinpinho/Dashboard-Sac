@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Entrar · SAC Casa do Padeiro</title>
     <link rel="icon" href="/assets/img/logo.png">
-    <link rel="stylesheet" href="/assets/css/app.css?v=1">
+    <link rel="stylesheet" href="/assets/css/app.css?v=2">
 </head>
 <body class="tela-login">
 <form class="cartao login" method="post" action="/login">

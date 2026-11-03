@@ -8,6 +8,19 @@ $metodo = $_SERVER['REQUEST_METHOD'];
 $rota = rtrim(parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH), '/') ?: '/';
 
 try {
+    /* ---------- verificação de funcionamento (só sim/não, nunca valores) ---------- */
+    if ($rota === '/saude') {
+        $banco = true;
+        try {
+            db()->findOne('usuarios', ['email' => '__verificacao__']);
+        } catch (Throwable) {
+            $banco = false;
+        }
+        header('Content-Type: application/json');
+        echo json_encode(['banco' => $banco, 'anexos' => Anexos::ativo()]);
+        exit;
+    }
+
     /* ---------- login ---------- */
     if ($rota === '/login') {
         $erro = null;
@@ -65,12 +78,29 @@ try {
         exit;
     }
 
+    /* ---------- token para o navegador enviar um anexo direto ao Blob ---------- */
+    if ($rota === '/anexos/token' && $metodo === 'POST') {
+        $evento = json_decode(file_get_contents('php://input'), true) ?: [];
+        header('Content-Type: application/json');
+        if (($evento['type'] ?? '') !== 'blob.generate-client-token') {
+            http_response_code(400);
+            echo json_encode(['erro' => 'Evento inválido.']);
+            exit;
+        }
+        echo json_encode([
+            'type'        => 'blob.generate-client-token',
+            'clientToken' => Anexos::tokenEnvio((string) ($evento['payload']['pathname'] ?? '')),
+        ]);
+        exit;
+    }
+
     /* ---------- nova reclamação ---------- */
     if ($rota === '/reclamacoes/nova') {
-        $r = ['data' => date('Y-m-d'), 'hora' => date('H:i'), 'tipo' => opcoes('tipos')[0]];
+        $r = ['data' => date('Y-m-d'), 'hora' => date('H:i'), 'tipo' => opcoes('tipos')[0], 'anexos' => []];
         $erros = [];
         if ($metodo === 'POST') {
             [$r, $erros] = Sac::preparar($_POST);
+            $r['anexos'] = anexosDoFormulario([], $usuario);
             if (!$erros) {
                 $id = Sac::criar($r, $usuario);
                 avisar('Reclamação registrada.');
@@ -88,6 +118,7 @@ try {
         if (!empty($m[2])) {
             if ($metodo !== 'POST' || !Auth::admin()) throw new DomainException('Somente administradores podem excluir.');
             Sac::excluir($atual['id']);
+            Anexos::excluir(array_column($atual['anexos'] ?? [], 'url'));
             avisar('Reclamação nº ' . $atual['numero'] . ' excluída.');
             redirecionar('/reclamacoes');
         }
@@ -96,8 +127,12 @@ try {
         $erros = [];
         if ($metodo === 'POST') {
             [$dados, $erros] = Sac::preparar($_POST);
+            $antes = $atual['anexos'] ?? [];
+            $dados['anexos'] = anexosDoFormulario($antes, $usuario);
             if (!$erros) {
                 Sac::atualizar($atual['id'], $dados, $usuario);
+                // arquivos tirados da reclamação saem também do armazenamento
+                Anexos::excluir(array_diff(array_column($antes, 'url'), array_column($dados['anexos'], 'url')));
                 avisar('Alterações salvas.');
                 redirecionar('/reclamacoes/' . $atual['id']);
             }
@@ -144,6 +179,24 @@ try {
     http_response_code(500);
     // detalhes só no log da Vercel: a mensagem pode conter dados de conexão do banco
     view('erro', ['titulo' => 'Erro', 'msg' => 'Algo deu errado. Tente novamente; se continuar, avise o responsável pelo sistema.']);
+}
+
+/**
+ * Lista de anexos enviada pelo formulário. Quem enviou e quando é sempre definido aqui
+ * (para os anexos novos) ou mantido do registro salvo (para os que já existiam).
+ */
+function anexosDoFormulario(array $antes, array $usuario): array
+{
+    // sem armazenamento configurado não dá para conferir a lista: mantém o que já estava salvo
+    if (!Anexos::ativo()) return $antes;
+    $existentes = array_column($antes, null, 'url');
+    $lista = Anexos::limpar((string) ($_POST['anexos'] ?? '[]'));
+    foreach ($lista as &$a) {
+        $velho = $existentes[$a['url']] ?? null;
+        $a['enviado_por'] = $velho['enviado_por'] ?? $usuario['nome'];
+        $a['enviado_em'] = $velho['enviado_em'] ?? date('c');
+    }
+    return $lista;
 }
 
 /** Atalhos de período do dashboard -> [de, ate] */

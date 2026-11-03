@@ -17,6 +17,13 @@ Os campos seguem a aba **SAC** da planilha `planilha SAC.xlsx`, e o dashboard re
 | `/reclamacoes/{id}` | Edição e finalização (o tempo de resolução é calculado sozinho) |
 | `/importar` | Importa a planilha .xlsx ou .csv, com prévia. Linhas que já foram importadas são ignoradas |
 
+**Fotos e vídeos:** cada reclamação aceita anexos (até 100 MB por arquivo; fotos grandes são reduzidas para 2000px antes do envio).
+Os arquivos vão direto do navegador para o **Vercel Blob** (store `sac-anexos`, público com nomes aleatórios, região São Paulo),
+autorizados por um token temporário gerado em `/anexos/token`. Anexos removidos de uma reclamação, ou de uma reclamação excluída,
+são apagados do Blob. A biblioteca de envio fica em `assets/js/vendor/` (gerada do pacote oficial `@vercel/blob`).
+
+`/saude` responde se o banco e os anexos estão funcionando (só sim/não).
+
 As listas de opções (tipos, sugestões de descrição e solução, dias para alerta) ficam em [config/opcoes.php](config/opcoes.php).
 
 ## Publicação

@@ -237,6 +237,36 @@ a.kpi:hover { border-color: var(--destaque); color: var(--texto); }
 .lista-erros { margin: 0 0 16px 18px; color: var(--alerta); font-size: 0.88rem; }
 form.acoes { margin-top: 16px; justify-content: flex-end; }
 
+/* ===== ANEXOS (fotos e vídeos) ===== */
+.anexos-grade { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
+.anexos-grade:not(:empty) { margin-bottom: 14px; }
+.anexo { position: relative; background: var(--fundo); border: 1px solid var(--borda); border-radius: 10px; overflow: hidden; }
+.anexo-midia { display: block; aspect-ratio: 4 / 3; background: #0a0d13; position: relative; }
+.anexo-midia img, .anexo-midia video { width: 100%; height: 100%; object-fit: cover; display: block; }
+.anexo-play {
+  position: absolute; inset: 0; margin: auto; width: 40px; height: 40px; border-radius: 50%;
+  display: grid; place-items: center; padding-left: 3px;
+  background: rgba(14, 18, 25, .75); color: var(--destaque); font-size: 1rem; border: 1px solid var(--destaque);
+}
+.anexo:hover { border-color: var(--destaque); }
+.anexo figcaption { display: flex; flex-direction: column; padding: 6px 10px 8px; font-size: 0.78rem; min-width: 0; }
+.anexo-nome { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--texto); }
+.anexo-remover {
+  position: absolute; top: 6px; right: 6px; width: 28px; height: 28px; border-radius: 50%;
+  border: 1px solid var(--borda); background: rgba(14, 18, 25, .85); color: var(--texto);
+  font-size: 1.1rem; line-height: 1; cursor: pointer;
+}
+.anexo-remover:hover { color: var(--alerta); border-color: var(--alerta); }
+.soltar-anexos { padding: 22px 16px; }
+.envios { list-style: none; display: flex; flex-direction: column; gap: 6px; margin-top: 10px; font-size: 0.85rem; }
+.envios:empty { display: none; }
+.envios li { display: grid; grid-template-columns: minmax(0, 1fr) 140px auto; gap: 10px; align-items: center; }
+.envios li span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.envios progress { width: 100%; height: 6px; accent-color: var(--destaque); }
+.envios li.falhou { color: var(--alerta); }
+.envios li.falhou progress { display: none; }
+.clipe { color: var(--mudo); font-size: 0.8rem; margin-left: 4px; white-space: nowrap; }
+
 /* ===== DICA (tooltip) ===== */
 .dica {
   position: fixed; z-index: 50; pointer-events: none;
