@@ -142,6 +142,26 @@ try {
         exit;
     }
 
+    /* ---------- usuários (só administradores) ---------- */
+    if ($rota === '/usuarios') {
+        if (!Auth::admin()) {
+            http_response_code(403);
+            view('erro', ['titulo' => 'Acesso restrito', 'msg' => 'Somente administradores podem cadastrar usuários.']);
+            exit;
+        }
+        $novo = [];
+        $erros = [];
+        if ($metodo === 'POST') {
+            [$novo, $erros] = Usuarios::criar($_POST, $usuario);
+            if (!$erros) {
+                avisar('Usuário ' . $novo['nome'] . ' cadastrado. Ele já pode entrar com o e-mail e a senha informados.');
+                redirecionar('/usuarios');
+            }
+        }
+        view('usuarios', ['titulo' => 'Usuários', 'novo' => $novo, 'erros' => $erros, 'lista' => Usuarios::listarSac()]);
+        exit;
+    }
+
     /* ---------- importação ---------- */
     if ($rota === '/importar') {
         $res = null;

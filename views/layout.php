@@ -23,6 +23,7 @@ $aviso = pegar_aviso();
         <a class="<?= $ativo('/') ?>" href="/">Dashboard</a>
         <a class="<?= $ativo('/reclamacoes') ?>" href="/reclamacoes">Reclamações</a>
         <a class="<?= $ativo('/importar') ?>" href="/importar">Importar</a>
+        <?php if (Auth::admin()): ?><a class="<?= $ativo('/usuarios') ?>" href="/usuarios">Usuários</a><?php endif ?>
     </nav>
     <div class="usuario">
         <span><?= e($u['nome'] ?? '') ?></span>

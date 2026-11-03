@@ -6,6 +6,9 @@ Os campos seguem a aba **SAC** da planilha `planilha SAC.xlsx`, e o dashboard re
 - **Linguagem:** PHP 8.3+ (sem frameworks e sem Composer)
 - **Banco:** o mesmo MongoDB do sistema de produção (homolog), na coleção `sac_reclamacoes`
 - **Login:** os mesmos usuários do sistema de produção (coleção `usuarios`). Só administradores podem excluir reclamações.
+- **Usuários:** administradores cadastram usuários do SAC em `/usuarios`. Eles são gravados com cargo `operador` e área `sac`:
+  entram no SAC e, no sistema de produção, não veem nenhum módulo. Se um administrador editar um desses usuários pela tela
+  do sistema de produção, a área vira `todas` lá.
 
 ## Telas
 
