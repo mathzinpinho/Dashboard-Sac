@@ -1,0 +1,11 @@
+# segredos e configuração local
+.env*
+!.env.example
+.vercel
+
+# dados de teste locais
+data/
+
+# editor
+.vscode/
+.claude/

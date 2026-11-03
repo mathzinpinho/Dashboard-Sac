@@ -1,0 +1,6 @@
+.env
+data/
+scripts/
+router.php
+.claude/
+README.md

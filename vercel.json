@@ -1,0 +1,12 @@
+{
+  "functions": {
+    "api/index.php": {
+      "runtime": "vercel-php@0.7.3",
+      "includeFiles": "{src,views,config}/**"
+    }
+  },
+  "routes": [
+    { "src": "/assets/(.*)", "dest": "/assets/$1", "headers": { "Cache-Control": "public, max-age=86400" } },
+    { "src": "/(.*)", "dest": "/api/index.php" }
+  ]
+}
