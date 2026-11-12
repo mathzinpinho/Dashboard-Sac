@@ -2,35 +2,43 @@
 $erro = fn(string $c) => isset($erros[$c]) ? '<span class="erro-campo">' . e($erros[$c]) . '</span>' : '';
 $cls = fn(string $c) => isset($erros[$c]) ? 'com-erro' : '';
 ?>
-<div class="cabecalho">
+<header class="pagina-cab">
     <div>
-        <a class="voltar" href="/reclamacoes">‹ Reclamações</a>
+        <nav class="trilha" aria-label="Trilha">
+            <a href="/reclamacoes">Reclamações</a><?= icone('direita', 12) ?><span>Apagar todas</span>
+        </nav>
         <h1>Apagar todas as reclamações</h1>
     </div>
-</div>
+</header>
 
 <?php if (!$total): ?>
     <section class="cartao vazio">
-        <p>Não há reclamações para apagar.</p>
-        <a class="botao" href="/reclamacoes">Voltar</a>
+        <span class="vazio-icone"><?= icone('caixa', 20) ?></span>
+        <h3>Não há reclamações para apagar</h3>
+        <div class="acoes"><a class="botao" href="/reclamacoes">Voltar</a></div>
     </section>
 <?php else: ?>
     <section class="cartao zona-perigo">
-        <h2>⚠ Esta ação não pode ser desfeita</h2>
-        <p>Serão apagados <strong>definitivamente</strong>:</p>
+        <div class="zona-perigo-cab">
+            <?= icone('alerta', 20) ?>
+            <div>
+                <h2>Esta ação não pode ser desfeita</h2>
+                <p>Os dados abaixo serão apagados definitivamente. Usuários e configurações não são afetados, e a numeração dos próximos SACs continua de onde parou.</p>
+            </div>
+        </div>
+
         <ul class="lista-perigo">
-            <li><strong><?= numero($total) ?></strong> reclamaç<?= $total === 1 ? 'ão' : 'ões' ?>, de todos os períodos</li>
-            <?php if ($anexos): ?><li><strong><?= numero($anexos) ?></strong> foto<?= $anexos === 1 ? '' : 's' ?>/vídeo<?= $anexos === 1 ? '' : 's' ?> anexado<?= $anexos === 1 ? '' : 's' ?></li><?php endif ?>
-            <?php if ($prejuizo > 0): ?><li>o histórico de <strong><?= e(moeda($prejuizo)) ?></strong> em valores gastos</li><?php endif ?>
+            <li><span>Reclamações</span><strong><?= numero($total) ?></strong></li>
+            <li><span>Fotos e vídeos</span><strong><?= numero($anexos) ?></strong></li>
+            <li><span>Valores gastos registrados</span><strong><?= e(moeda($prejuizo)) ?></strong></li>
         </ul>
-        <p class="mudo">Os usuários e a configuração do sistema não são afetados. A numeração dos próximos SACs continua de onde parou.</p>
 
         <div class="passo">
             <span class="passo-n">1</span>
             <div>
-                <strong>Baixe uma cópia antes</strong>
-                <p class="mudo pequeno">A planilha exportada pode ser importada de volta em <em>Importar</em>, se precisar. As fotos e os vídeos não vão na planilha.</p>
-                <a class="botao" href="/exportar">Exportar CSV de todas as reclamações</a>
+                <strong>Baixe uma cópia</strong>
+                <p class="mudo">O CSV pode ser importado de volta em Importar planilha. Fotos e vídeos não fazem parte do arquivo.</p>
+                <a class="botao" href="/exportar"><?= icone('baixar') ?>Exportar todas as reclamações</a>
             </div>
         </div>
 
@@ -38,7 +46,7 @@ $cls = fn(string $c) => isset($erros[$c]) ? 'com-erro' : '';
             <input type="hidden" name="_csrf" value="<?= e(Auth::csrf()) ?>">
             <span class="passo-n">2</span>
             <div class="campos">
-                <strong>Confirme</strong>
+                <strong>Confirme a exclusão</strong>
                 <?php /* campo de usuário invisível: o gerenciador de senhas preenche este, e não o da frase */ ?>
                 <input type="email" name="usuario_atual" value="<?= e(Auth::usuario()['email'] ?? '') ?>" autocomplete="username" class="invisivel" tabindex="-1" aria-hidden="true" readonly>
                 <label class="<?= $cls('frase') ?>"><span>Digite <code><?= e($frase) ?></code> para confirmar</span>
@@ -56,7 +64,7 @@ $cls = fn(string $c) => isset($erros[$c]) ? 'com-erro' : '';
                 </label>
                 <div class="acoes">
                     <a class="botao" href="/reclamacoes">Cancelar</a>
-                    <button class="botao perigo-cheio" disabled data-botao-apagar>Apagar <?= numero($total) ?> reclamações</button>
+                    <button class="botao perigo-cheio" disabled data-botao-apagar><?= icone('lixeira') ?>Apagar <?= numero($total) ?> reclamações</button>
                 </div>
             </div>
         </form>

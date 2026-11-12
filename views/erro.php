@@ -1,5 +1,6 @@
 <section class="cartao vazio">
-    <h1><?= e($titulo) ?></h1>
+    <span class="vazio-icone"><?= icone('alerta', 20) ?></span>
+    <h3><?= e($titulo) ?></h3>
     <p><?= e($msg) ?></p>
-    <a class="botao" href="/">Voltar ao dashboard</a>
+    <div class="acoes"><a class="botao" href="/">Voltar ao dashboard</a></div>
 </section>

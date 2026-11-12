@@ -1,17 +1,26 @@
-<?php $alerta = opcoes('dias_alerta'); ?>
-<div class="cabecalho">
+<?php
+$alerta = opcoes('dias_alerta');
+$filtrado = (bool) array_filter($f);
+$porPagina = 30;
+$de_ = ($pagina - 1) * $porPagina + 1;
+$ate_ = min($total, $pagina * $porPagina);
+?>
+<header class="pagina-cab">
     <div>
         <h1>Reclamações</h1>
-        <p class="mudo"><?= numero($total) ?> registro<?= $total === 1 ? '' : 's' ?></p>
+        <p class="pagina-desc"><?= numero($total) ?> registro<?= $total === 1 ? '' : 's' ?><?= $filtrado ? ' com os filtros aplicados' : '' ?></p>
     </div>
-    <div class="acoes">
-        <a class="botao" href="/exportar<?= e(qs(['p' => null])) ?>">Exportar CSV</a>
-        <a class="botao primario" href="/reclamacoes/nova">+ Nova reclamação</a>
+    <div class="pagina-acoes">
+        <a class="botao" href="/exportar<?= e(qs(['p' => null])) ?>"><?= icone('baixar') ?>Exportar CSV</a>
+        <a class="botao primario" href="/reclamacoes/nova"><?= icone('mais') ?>Nova reclamação</a>
     </div>
-</div>
+</header>
 
-<form class="filtros" method="get" action="/reclamacoes">
-    <input type="search" name="q" value="<?= e($f['q']) ?>" placeholder="Buscar cliente, produto, lote, pedido..." class="busca">
+<form class="filtros" method="get" action="/reclamacoes" role="search">
+    <div class="busca">
+        <?= icone('busca') ?>
+        <input type="search" name="q" value="<?= e($f['q']) ?>" placeholder="Buscar por cliente, produto, lote, pedido ou nº" aria-label="Buscar">
+    </div>
     <select name="status" data-auto-enviar aria-label="Status">
         <option value="">Todos os status</option>
         <option value="aberto" <?= $f['status'] === 'aberto' ? 'selected' : '' ?>>Em aberto</option>
@@ -24,23 +33,35 @@
         <?php endforeach ?>
     </select>
     <div class="intervalo">
-        <input type="date" name="de" value="<?= e($f['de']) ?>" aria-label="De">
+        <input type="date" name="de" value="<?= e($f['de']) ?>" aria-label="Data inicial">
         <span class="mudo">até</span>
-        <input type="date" name="ate" value="<?= e($f['ate']) ?>" aria-label="Até">
+        <input type="date" name="ate" value="<?= e($f['ate']) ?>" aria-label="Data final">
     </div>
-    <button class="botao">Filtrar</button>
-    <?php if (array_filter($f)): ?><a class="limpar" href="/reclamacoes">Limpar</a><?php endif ?>
+    <button class="botao"><?= icone('filtro', 14) ?>Filtrar</button>
+    <?php if ($filtrado): ?><a class="limpar" href="/reclamacoes">Limpar filtros</a><?php endif ?>
 </form>
 
 <section class="cartao sem-padding">
     <?php if (!$itens): ?>
-        <p class="mudo vazio-lista">Nenhuma reclamação encontrada.</p>
+        <div class="vazio">
+            <span class="vazio-icone"><?= icone($filtrado ? 'busca' : 'caixa', 20) ?></span>
+            <h3><?= $filtrado ? 'Nenhum resultado' : 'Nenhuma reclamação registrada' ?></h3>
+            <p><?= $filtrado ? 'Ajuste a busca ou os filtros para encontrar o que procura.' : 'Registre a primeira reclamação ou importe o histórico da planilha.' ?></p>
+            <div class="acoes">
+                <?php if ($filtrado): ?>
+                    <a class="botao" href="/reclamacoes">Limpar filtros</a>
+                <?php else: ?>
+                    <a class="botao" href="/importar"><?= icone('enviar') ?>Importar planilha</a>
+                    <a class="botao primario" href="/reclamacoes/nova"><?= icone('mais') ?>Nova reclamação</a>
+                <?php endif ?>
+            </div>
+        </div>
     <?php else: ?>
         <div class="tabela-rolagem">
             <table class="tabela">
                 <thead>
                 <tr>
-                    <th>Nº</th><th>Data</th><th>Cliente</th><th>Tipo</th><th>Produto</th><th>Lote</th>
+                    <th>Nº</th><th>Data</th><th class="col-cliente">Cliente</th><th>Tipo</th><th>Produto</th><th>Lote</th>
                     <th>Reclamação</th><th>Status</th><th class="num">Valor gasto</th><th class="num">Resolução</th>
                 </tr>
                 </thead>
@@ -48,46 +69,55 @@
                 <?php foreach ($itens as $r):
                     $aberto = ($r['status'] ?? '') === 'aberto';
                     $dias = $aberto && $r['data'] ? (int) floor((time() - strtotime($r['data'])) / 86400) : 0;
+                    $n = count($r['anexos'] ?? []);
                     ?>
                     <tr data-href="/reclamacoes/<?= e($r['id']) ?>">
                         <td class="nowrap">
-                            <a href="/reclamacoes/<?= e($r['id']) ?>"><?= e($r['numero']) ?></a>
-                            <?php if ($n = count($r['anexos'] ?? [])): ?><span class="clipe" title="<?= $n ?> anexo<?= $n > 1 ? 's' : '' ?>">📎<?= $n ?></span><?php endif ?>
+                            <a class="numero-sac" href="/reclamacoes/<?= e($r['id']) ?>"><?= e($r['numero']) ?></a>
+                            <?php if ($n): ?><span class="clipe" title="<?= $n ?> anexo<?= $n > 1 ? 's' : '' ?>"><?= icone('clipe', 12) ?><?= $n ?></span><?php endif ?>
                         </td>
-                        <td class="nowrap"><?= e(data_br($r['data'])) ?> <span class="mudo"><?= e($r['hora']) ?></span></td>
+                        <td class="nowrap">
+                            <?= e(data_br($r['data'])) ?>
+                            <?php if ($r['hora']): ?><div class="sub-linha"><?= e($r['hora']) ?></div><?php endif ?>
+                        </td>
                         <td>
-                            <?= e($r['razao_social'] ?: $r['cliente']) ?>
-                            <?php if ($r['razao_social'] && $r['cliente']): ?><div class="mudo pequeno"><?= e($r['cliente']) ?></div><?php endif ?>
+                            <span class="principal"><?= e($r['razao_social'] ?: $r['cliente']) ?></span>
+                            <?php if ($r['razao_social'] && $r['cliente']): ?><div class="sub-linha"><?= e($r['cliente']) ?></div><?php endif ?>
                         </td>
                         <td><?= e($r['tipo']) ?></td>
                         <td><?= e($r['produto']) ?></td>
                         <td><?= e($r['lote']) ?></td>
                         <td class="texto-longo"><?= e($r['descricao']) ?></td>
                         <td>
-                            <?php if ($aberto): ?>
-                                <span class="selo selo-aberto <?= $dias > $alerta ? 'selo-atrasado' : '' ?>">● Aberto<?= $dias > $alerta ? " · {$dias}d" : '' ?></span>
+                            <?php if ($aberto && $dias > $alerta): ?>
+                                <span class="selo selo-atrasado" title="Aberto há <?= $dias ?> dias">Atrasado · <?= $dias ?>d</span>
+                            <?php elseif ($aberto): ?>
+                                <span class="selo selo-aberto">Aberto</span>
                             <?php else: ?>
-                                <span class="selo selo-final">✓ Finalizado</span>
+                                <span class="selo selo-final">Finalizado</span>
                             <?php endif ?>
                         </td>
-                        <td class="num"><?= isset($r['valor']) ? moeda((float) $r['valor']) : '—' ?></td>
-                        <td class="num"><?= isset($r['tempo_resolucao_h']) ? duracao((float) $r['tempo_resolucao_h']) : '—' ?></td>
+                        <td class="num"><?= isset($r['valor']) ? moeda((float) $r['valor']) : '<span class="mudo">—</span>' ?></td>
+                        <td class="num"><?= isset($r['tempo_resolucao_h']) ? duracao((float) $r['tempo_resolucao_h']) : '<span class="mudo">—</span>' ?></td>
                     </tr>
                 <?php endforeach ?>
                 </tbody>
             </table>
         </div>
+        <div class="tabela-rodape">
+            <span><?= numero($de_) ?>–<?= numero($ate_) ?> de <?= numero($total) ?></span>
+            <?php if ($paginas > 1): ?>
+                <nav class="paginacao" aria-label="Páginas">
+                    <a class="botao pequeno" href="<?= e(qs(['p' => max(1, $pagina - 1)])) ?>"<?= $pagina <= 1 ? ' aria-disabled="true"' : '' ?>><?= icone('esquerda', 14) ?>Anterior</a>
+                    <a class="botao pequeno" href="<?= e(qs(['p' => min($paginas, $pagina + 1)])) ?>"<?= $pagina >= $paginas ? ' aria-disabled="true"' : '' ?>>Próxima<?= icone('direita', 14) ?></a>
+                </nav>
+            <?php endif ?>
+        </div>
     <?php endif ?>
 </section>
 
-<?php if ($paginas > 1): ?>
-    <nav class="paginacao" aria-label="Páginas">
-        <?php if ($pagina > 1): ?><a href="<?= e(qs(['p' => $pagina - 1])) ?>">‹ Anterior</a><?php endif ?>
-        <span class="mudo">Página <?= $pagina ?> de <?= $paginas ?></span>
-        <?php if ($pagina < $paginas): ?><a href="<?= e(qs(['p' => $pagina + 1])) ?>">Próxima ›</a><?php endif ?>
-    </nav>
-<?php endif ?>
-
 <?php if (Auth::admin() && $total): ?>
-    <div class="rodape-lista"><a class="link-perigo" href="/reclamacoes/apagar-tudo">Apagar todas as reclamações…</a></div>
+    <div class="excluir">
+        <a class="link-perigo" href="/reclamacoes/apagar-tudo"><?= icone('lixeira', 14) ?>Apagar todas as reclamações</a>
+    </div>
 <?php endif ?>

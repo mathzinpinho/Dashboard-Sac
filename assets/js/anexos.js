@@ -2,6 +2,11 @@
 // com um token temporário gerado pelo PHP em /anexos/token.
 import { upload } from './vendor/vercel-blob-client.js';
 
+// mesmos ícones de icone() em src/helpers.php
+const svg = (tracos, cheio = false) => `<svg class="icone" width="14" height="14" viewBox="0 0 24 24" fill="${cheio ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${tracos}</svg>`;
+const ICONE_PLAY = svg('<polygon points="6 3 20 12 6 21 6 3"/>', true);
+const ICONE_FECHAR = svg('<path d="M18 6 6 18"/><path d="m6 6 12 12"/>');
+
 const secao = document.getElementById('anexos');
 if (secao) {
   const campo = secao.querySelector('[data-anexos-campo]');
@@ -61,7 +66,7 @@ if (secao) {
       v.muted = true;
       const play = document.createElement('span');
       play.className = 'anexo-play';
-      play.textContent = '▶';
+      play.innerHTML = ICONE_PLAY;
       link.append(v, play);
     } else {
       const img = document.createElement('img');
@@ -83,7 +88,7 @@ if (secao) {
     rem.className = 'anexo-remover';
     rem.dataset.remover = '';
     rem.setAttribute('aria-label', 'Remover ' + a.nome);
-    rem.textContent = '×';
+    rem.innerHTML = ICONE_FECHAR;
     fig.append(link, cap, rem);
     return fig;
   }

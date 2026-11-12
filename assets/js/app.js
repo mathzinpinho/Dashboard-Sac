@@ -1,5 +1,19 @@
 // Pequenos comportamentos de interface. Todo o resto é PHP.
 (function () {
+  // menu lateral no celular
+  const abrir = document.querySelector('[data-abrir-menu]');
+  const fundo = document.querySelector('[data-fechar-menu]');
+  if (abrir && fundo) {
+    const alternar = (aberto) => {
+      document.body.classList.toggle('menu-aberto', aberto);
+      fundo.hidden = !aberto;
+      abrir.setAttribute('aria-expanded', String(aberto));
+    };
+    abrir.addEventListener('click', () => alternar(true));
+    fundo.addEventListener('click', () => alternar(false));
+    document.addEventListener('keydown', (ev) => { if (ev.key === 'Escape') alternar(false); });
+  }
+
   // dica (tooltip) dos gráficos
   const dica = document.getElementById('dica');
   if (dica) {
