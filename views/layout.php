@@ -34,7 +34,7 @@ if (Auth::admin()) {
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
-    <link rel="stylesheet" href="/assets/css/app.css?v=13">
+    <link rel="stylesheet" href="/assets/css/app.css?v=16">
 </head>
 <body>
 <div class="app">
@@ -87,7 +87,6 @@ if (Auth::admin()) {
     </div>
 </div>
 
-<div id="dica" class="dica" role="tooltip" hidden></div>
-<script src="/assets/js/app.js?v=5"></script>
+<script src="/assets/js/app.js?v=6"></script>
 </body>
 </html>

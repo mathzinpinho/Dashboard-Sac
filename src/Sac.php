@@ -193,12 +193,12 @@ final class Sac
     public static function indicadores(array $lista, ?string $de, ?string $ate): array
     {
         $tempos = [];
-        $porTipo = $porDescricao = $porProduto = $porLote = $porSolucao = $porMes = $porData = [];
+        $porTipo = $porDescricao = $porProduto = $porLote = $porSolucao = $porData = [];
         $abertos = [];
         $hoje = date('Y-m-d');
         $valorTotal = 0.0;
         $comValor = 0;
-        $valorMes = $valorDescricao = $valorProduto = [];
+        $valorDia = $valorDescricao = $valorProduto = [];
 
         foreach ($lista as $r) {
             if (!empty($r['tipo'])) $porTipo[$r['tipo']] = ($porTipo[$r['tipo']] ?? 0) + 1;
@@ -207,8 +207,6 @@ final class Sac
             foreach (self::itens($r['produto'] ?? '') as $p) $porProduto[$p] = ($porProduto[$p] ?? 0) + 1;
             foreach (self::itens($r['lote'] ?? '') as $l) $porLote[$l] = ($porLote[$l] ?? 0) + 1;
             if (!empty($r['data'])) {
-                $m = substr($r['data'], 0, 7);
-                $porMes[$m] = ($porMes[$m] ?? 0) + 1;
                 $porData[$r['data']] = ($porData[$r['data']] ?? 0) + 1;
             }
             if (isset($r['tempo_resolucao_h'])) $tempos[] = (float) $r['tempo_resolucao_h'];
@@ -216,7 +214,7 @@ final class Sac
                 $v = (float) $r['valor'];
                 $valorTotal += $v;
                 $comValor++;
-                if (!empty($r['data'])) $valorMes[substr($r['data'], 0, 7)] = ($valorMes[substr($r['data'], 0, 7)] ?? 0) + $v;
+                if (!empty($r['data'])) $valorDia[$r['data']] = ($valorDia[$r['data']] ?? 0) + $v;
                 if (!empty($r['descricao'])) $valorDescricao[$r['descricao']] = ($valorDescricao[$r['descricao']] ?? 0) + $v;
                 // SAC com vários produtos: o valor é dividido igualmente entre eles
                 $prods = self::itens($r['produto'] ?? '');
@@ -225,20 +223,6 @@ final class Sac
             if (($r['status'] ?? '') === 'aberto') {
                 $r['dias_aberto'] = $r['data'] ? (int) floor((strtotime($hoje) - strtotime($r['data'])) / 86400) : null;
                 $abertos[] = $r;
-            }
-        }
-
-        // eixo de meses contínuo (meses sem SAC aparecem com zero)
-        $meses = $mesesValor = [];
-        if ($porMes) {
-            $ini = substr($de ?: min(array_keys($porMes)) . '-01', 0, 7);
-            $fim = substr($ate ?: max(array_keys($porMes)) . '-01', 0, 7);
-            $cursor = new DateTime("$ini-01");
-            while ($cursor->format('Y-m') <= $fim && count($meses) < 36) {
-                $k = $cursor->format('Y-m');
-                $meses[$k] = $porMes[$k] ?? 0;
-                $mesesValor[$k] = round($valorMes[$k] ?? 0, 2);
-                $cursor->modify('+1 month');
             }
         }
 
@@ -262,15 +246,57 @@ final class Sac
             'top_lote'      => self::ranking($porLote),
             'top_solucao'   => self::ranking($porSolucao, 6),
             'top_datas'     => self::ranking($porData, 6),
-            'por_mes'       => $meses,
+            'serie'         => self::serieTemporal($porData, $valorDia, $de, $ate),
             'valor_total'   => round($valorTotal, 2),
             'valor_medio'   => $comValor ? $valorTotal / $comValor : null,
             'com_valor'     => $comValor,
-            'valor_mes'     => array_sum($mesesValor) > 0 ? $mesesValor : [],
             'valor_descricao' => array_map(fn($v) => round($v, 2), self::ranking($valorDescricao)),
             'valor_produto' => array_map(fn($v) => round($v, 2), self::ranking($valorProduto)),
             'lista_abertos' => $abertos,
         ];
+    }
+
+    /**
+     * Série contínua para os gráficos (pontos sem SAC entram com zero).
+     * Agrupa por dia até 31 dias, por semana (segunda a domingo) até ~6 meses e por mês acima disso.
+     * $qtdDia / $valorDia: 'Y-m-d' => quantidade / valor gasto.
+     */
+    private static function serieTemporal(array $qtdDia, array $valorDia, ?string $de, ?string $ate): array
+    {
+        if (!$qtdDia) return ['grao' => 'mes', 'pontos' => []];
+        $ini = new DateTimeImmutable($de ?: min(array_keys($qtdDia)));
+        $fim = new DateTimeImmutable($ate ?: max(array_keys($qtdDia)));
+        $dias = (int) $ini->diff($fim)->days;
+        $grao = $dias <= 31 ? 'dia' : ($dias <= 190 ? 'semana' : 'mes');
+
+        $inicioDoGrupo = fn(DateTimeImmutable $d) => match ($grao) {
+            'dia'    => $d,
+            'semana' => $d->modify('monday this week'),
+            'mes'    => $d->modify('first day of this month'),
+        };
+        $proximo = ['dia' => '+1 day', 'semana' => '+1 week', 'mes' => '+1 month'][$grao];
+
+        $soma = [];
+        foreach ($qtdDia as $dia => $q) {
+            $k = $inicioDoGrupo(new DateTimeImmutable($dia))->format('Y-m-d');
+            $soma[$k][0] = ($soma[$k][0] ?? 0) + $q;
+            $soma[$k][1] = ($soma[$k][1] ?? 0) + ($valorDia[$dia] ?? 0);
+        }
+
+        $pontos = [];
+        for ($c = $inicioDoGrupo($ini); $c <= $fim && count($pontos) < 400; $c = $c->modify($proximo)) {
+            $k = $c->format('Y-m-d');
+            // o grupo é cortado nas pontas do período filtrado
+            $a = max($c, $ini);
+            $b = min($c->modify($proximo)->modify('-1 day'), $fim);
+            $pontos[] = [
+                'de'    => $a->format('Y-m-d'),
+                'ate'   => $b->format('Y-m-d'),
+                'qtd'   => $soma[$k][0] ?? 0,
+                'valor' => round($soma[$k][1] ?? 0, 2),
+            ];
+        }
+        return ['grao' => $grao, 'pontos' => $pontos];
     }
 
     private static function mediana(array $v): float

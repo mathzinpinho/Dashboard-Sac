@@ -9,30 +9,40 @@ $semValor = 'Nenhum valor gasto lançado no período.';
 $filtroLista = array_filter(['de' => $de, 'ate' => $ate, 'tipo' => $_GET['tipo'] ?? '']);
 $linkLista = fn(array $extra = []) => '/reclamacoes?' . http_build_query(array_merge($filtroLista, $extra));
 
-/** Lista ranqueada com barra horizontal; cada linha abre a lista filtrada. $dinheiro: valores em R$ */
+/**
+ * Ranking reativo: o número em destaque do cartão mostra o total e, ao passar o mouse,
+ * o valor do item. Cada linha abre a lista filtrada. $dinheiro: valores em R$.
+ */
 $ranking = function (string $titulo, array $dados, string $vazio = 'Sem registros no período.', bool $dinheiro = false, string $desc = '') use ($linkLista, $ind) {
     $max = $dados ? max($dados) : 0;
-    $base = $dinheiro ? max(0.01, $ind['valor_total']) : max(1, $ind['total']); ?>
-    <section class="cartao">
+    $base = $dinheiro ? max(0.01, $ind['valor_total']) : max(1, $ind['total']);
+    $fmt = fn($v) => $dinheiro ? moeda((float) $v) : numero($v); ?>
+    <section class="cartao cartao-reativo" data-ranking-reativo>
         <div class="cartao-cab">
             <div>
                 <h2><?= e($titulo) ?></h2>
-                <?php if ($desc): ?><span class="cartao-desc"><?= e($desc) ?></span><?php endif ?>
             </div>
         </div>
         <?php if (!$dados): ?>
             <p class="vazio-curto"><?= e($vazio) ?></p>
         <?php else: ?>
-            <ol class="ranking<?= $dinheiro ? ' ranking-dinheiro' : '' ?>">
+            <div class="destaque">
+                <strong data-hero><?= e($fmt($dinheiro ? $ind['valor_total'] : $ind['total'])) ?></strong>
+                <?php if (!$dinheiro): ?><span class="destaque-unidade">SACs</span><?php endif ?>
+            </div>
+            <p class="destaque-legenda" data-hero-legenda><?= e($desc ?: ($dinheiro ? 'Prejuízo no período' : 'SACs no período')) ?></p>
+            <ol class="ranking">
                 <?php foreach ($dados as $rotulo => $qtd):
-                    $texto = $dinheiro ? moeda((float) $qtd) : $qtd . ' SAC' . ($qtd > 1 ? 's' : '');
-                    $pct = round($qtd / $base * 100) . '% ' . ($dinheiro ? 'do prejuízo' : 'do total');
+                    $pct = round($qtd / $base * 100);
                     ?>
                     <li>
-                        <a href="<?= e($linkLista(['q' => $rotulo])) ?>" data-dica="<?= e($rotulo) ?> — <?= e($texto) ?> (<?= $pct ?>)">
+                        <a href="<?= e($linkLista(['q' => $rotulo])) ?>"
+                           data-item-valor="<?= e($fmt($qtd)) ?>"
+                           data-item-texto="<?= e($rotulo) ?> · <?= $pct ?>% <?= $dinheiro ? 'do prejuízo' : 'do total' ?>">
+                            <span class="r-ponto" aria-hidden="true"></span>
                             <span class="r-rotulo"><?= e($rotulo) ?></span>
-                            <span class="r-trilho"><span class="r-barra" style="width: <?= $max > 0 ? max(2, round($qtd / $max * 100)) : 2 ?>%"></span></span>
                             <span class="r-valor"><?= $dinheiro ? e(moeda((float) $qtd, false)) : $qtd ?></span>
+                            <span class="r-trilho"><span class="r-barra" style="width: <?= $max > 0 ? max(2, round($qtd / $max * 100)) : 2 ?>%"></span></span>
                         </a>
                     </li>
                 <?php endforeach ?>
@@ -41,49 +51,65 @@ $ranking = function (string $titulo, array $dados, string $vazio = 'Sem registro
     </section>
 <?php };
 
-/** Gráfico de colunas por mês. $dinheiro: valores em R$ */
-$colunas = function (string $titulo, array $serie, bool $dinheiro = false, string $desc = '') use ($linkLista, $semValor) { ?>
-    <section class="cartao cartao-grafico">
+/**
+ * Gráfico de área reativo (assets/js/graficos.js): o número em destaque mostra o total do período
+ * e, ao passar o mouse, o valor do ponto. $campo: 'qtd' (SACs) ou 'valor' (R$).
+ */
+$grafico = function (string $titulo, string $campo) use ($ind, $linkLista, $semValor) {
+    $serie = $ind['serie'];
+    $grao = $serie['grao'];
+    $pontos = $serie['pontos'];
+    $dinheiro = $campo === 'valor';
+    $valores = array_column($pontos, $campo);
+    $vazio = !$pontos || ($dinheiro && array_sum($valores) <= 0);
+    $fmt = fn($v) => $dinheiro ? moeda((float) $v) : numero($v);
+
+    $curto = fn(string $d) => $grao === 'mes' ? mes_br(substr($d, 0, 7)) : date('d/m', strtotime($d));
+    $titulo_ponto = fn(array $p) => match ($grao) {
+        'dia'    => data_br($p['de']),
+        'semana' => 'Semana de ' . date('d/m', strtotime($p['de'])) . ' a ' . date('d/m', strtotime($p['ate'])),
+        'mes'    => ucfirst(mes_br(substr($p['de'], 0, 7), false)),
+    };
+    $porGrao = ['dia' => 'Por dia', 'semana' => 'Por semana', 'mes' => 'Por mês'][$grao];
+    $mediaRotulo = ['dia' => 'média/dia', 'semana' => 'média/semana', 'mes' => 'média/mês'][$grao];
+
+    $dados = [
+        'formato' => $dinheiro ? 'moeda' : 'numero',
+        'unidade' => $dinheiro ? null : ['SAC', 'SACs'],
+        'pontos'  => array_map(fn($p) => [
+            't' => $titulo_ponto($p),
+            'v' => $p[$campo],
+            'h' => $linkLista(['de' => $p['de'], 'ate' => $p['ate']]),
+        ], $pontos),
+    ]; ?>
+    <section class="cartao cartao-grafico"<?= $vazio ? '' : ' data-grafico="' . e(json_encode($dados, JSON_UNESCAPED_UNICODE)) . '"' ?>>
         <div class="cartao-cab">
-            <div>
-                <h2><?= e($titulo) ?></h2>
-                <?php if ($desc): ?><span class="cartao-desc"><?= e($desc) ?></span><?php endif ?>
-            </div>
+            <div><h2><?= e($titulo) ?></h2></div>
+            <span class="grafico-grao"><span class="grafico-grao-ponto" aria-hidden="true"></span><?= $porGrao ?></span>
         </div>
-        <?php if (!$serie): ?>
+        <?php if ($vazio): ?>
             <p class="vazio-curto"><?= $dinheiro ? e($semValor) : 'Sem registros no período.' ?></p>
-        <?php else:
-            $max = max($serie) ?: 1;
-            // topo do eixo arredondado para 1, 2, 2,5 ou 5 × 10^n
-            $passo = 10 ** floor(log10($max));
-            $topo = $passo * 10;
-            foreach ([1, 2, 2.5, 5] as $m) if ($m * $passo >= $max) { $topo = $m * $passo; break; }
-            $topo = max($topo, $dinheiro ? 10 : 5);
-            $rot = fn($v) => $dinheiro ? moeda((float) $v, false) : numero($v);
-            $pico = array_search(max($serie), $serie, true);
-            $ultimo = array_key_last($serie);
-            ?>
-            <div class="colunas<?= $dinheiro ? ' colunas-dinheiro' : '' ?>" style="--n: <?= count($serie) ?>">
-                <div class="eixo-y" aria-hidden="true">
-                    <span><?= e($rot($topo)) ?></span><span><?= e($rot($topo / 2)) ?></span><span>0</span>
-                </div>
-                <div class="plot">
-                    <?php foreach ($serie as $mes => $qtd):
-                        $texto = $dinheiro ? moeda((float) $qtd) : $qtd . ' SAC' . ($qtd === 1 ? '' : 's');
-                        ?>
-                        <a class="col" href="<?= e($linkLista(['de' => "$mes-01", 'ate' => date('Y-m-t', strtotime("$mes-01"))])) ?>"
-                           data-dica="<?= e(ucfirst(mes_br($mes, false))) ?> — <?= e($texto) ?>">
-                            <span class="col-barra" style="height: <?= $qtd ? max(1.5, $qtd / $topo * 100) : 0 ?>%">
-                                <?php if ($qtd && ($mes === $pico || $mes === $ultimo)): ?><b><?= e($rot($qtd)) ?></b><?php endif ?>
-                            </span>
-                            <span class="col-rotulo"><?= e(mes_br($mes)) ?></span>
-                        </a>
-                    <?php endforeach ?>
-                </div>
+        <?php else: ?>
+            <div class="destaque">
+                <strong data-hero><?= e($fmt($dinheiro ? $ind['valor_total'] : $ind['total'])) ?></strong>
+                <?php if (!$dinheiro): ?><span class="destaque-unidade">SACs</span><?php endif ?>
+                <span class="destaque-stats">
+                    <?= $mediaRotulo ?> <b><?= e($fmt(array_sum($valores) / count($valores))) ?></b>
+                    pico <b><?= e($fmt(max($valores))) ?></b>
+                </span>
+            </div>
+            <p class="destaque-legenda" data-hero-legenda><?= $dinheiro ? 'Prejuízo no período' : 'Total no período' ?></p>
+            <div class="grafico-area" data-area tabindex="0" role="img"
+                 aria-label="<?= e($titulo) ?>, <?= mb_strtolower($porGrao) ?>. Use as setas para ver cada ponto.">
+            </div>
+            <div class="grafico-eixo" aria-hidden="true">
+                <span><?= e($curto($pontos[0]['de'])) ?></span>
+                <span><?= e($curto(end($pontos)['de'])) ?></span>
             </div>
         <?php endif ?>
     </section>
 <?php };
+
 ?>
 
 <header class="pagina-cab">
@@ -173,15 +199,14 @@ $colunas = function (string $titulo, array $serie, bool $dinheiro = false, strin
     </div>
 </div>
 
-<?php $colunas('SACs por mês', $ind['por_mes'], false, 'Clique em um mês para ver as reclamações') ?>
-
-<div class="grade">
-    <?php $colunas('Prejuízo por mês', $ind['valor_mes'], true) ?>
-    <?php $ranking('Prejuízo por reclamação', $ind['valor_descricao'], $semValor, true) ?>
-    <?php $ranking('Prejuízo por produto', $ind['valor_produto'], $semValor, true, 'SAC com vários produtos divide o valor') ?>
+<div class="grade-2">
+    <?php $grafico('Reclamações', 'qtd') ?>
+    <?php $grafico('Prejuízo', 'valor') ?>
 </div>
 
-<div class="grade">
+<div class="grade-4">
+    <?php $ranking('Prejuízo por reclamação', $ind['valor_descricao'], $semValor, true) ?>
+    <?php $ranking('Prejuízo por produto', $ind['valor_produto'], $semValor, true, 'Prejuízo no período · dividido entre produtos do SAC') ?>
     <?php $ranking('Principais reclamações', $ind['top_descricao']) ?>
     <?php $ranking('Produtos com mais SACs', $ind['top_produto']) ?>
     <?php $ranking('Lotes com mais SACs', $ind['top_lote']) ?>
@@ -226,3 +251,5 @@ $colunas = function (string $titulo, array $serie, bool $dinheiro = false, strin
         </div>
     <?php endif ?>
 </section>
+
+<script src="/assets/js/graficos.js?v=2" defer></script>

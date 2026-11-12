@@ -14,23 +14,6 @@
     document.addEventListener('keydown', (ev) => { if (ev.key === 'Escape') alternar(false); });
   }
 
-  // dica (tooltip) dos gráficos
-  const dica = document.getElementById('dica');
-  if (dica) {
-    document.addEventListener('mouseover', (ev) => {
-      const alvo = ev.target.closest('[data-dica]');
-      if (!alvo) { dica.hidden = true; return; }
-      dica.textContent = alvo.dataset.dica;
-      dica.hidden = false;
-    });
-    document.addEventListener('mousemove', (ev) => {
-      if (dica.hidden) return;
-      const x = Math.min(ev.clientX + 14, window.innerWidth - dica.offsetWidth - 8);
-      dica.style.left = x + 'px';
-      dica.style.top = (ev.clientY + 16) + 'px';
-    });
-  }
-
   // selects que filtram ao mudar
   document.querySelectorAll('[data-auto-enviar]').forEach((s) => {
     s.addEventListener('change', () => s.form.submit());
