@@ -20,7 +20,7 @@ Os campos seguem a aba **SAC** da planilha `planilha SAC.xlsx`, e o dashboard re
 | `/reclamacoes/{id}` | Edição e finalização (o tempo de resolução é calculado sozinho) |
 | `/importar` | Importa a planilha .xlsx ou .csv, com prévia. Linhas que já foram importadas são ignoradas |
 
-**Valor gasto:** cada reclamação tem o campo *Valor gasto (R$)* (cupom, reembolso, reenvio...). O dashboard mostra o prejuízo total,
+**Valor gasto:** cada reclamação tem o campo *Valor gasto (R$)* (cupom, reembolso, reenvio...). O dashboard mostra o custo total,
 por mês, por reclamação e por produto (SAC com vários produtos divide o valor igualmente entre eles). A importação reconhece as colunas
 "Valor", "Valor gasto", "Prejuízo" ou "Custo".
 

@@ -30,7 +30,7 @@ $ranking = function (string $titulo, array $dados, string $vazio = 'Sem registro
                 <strong data-hero><?= e($fmt($dinheiro ? $ind['valor_total'] : $ind['total'])) ?></strong>
                 <?php if (!$dinheiro): ?><span class="destaque-unidade">SACs</span><?php endif ?>
             </div>
-            <p class="destaque-legenda" data-hero-legenda><?= e($desc ?: ($dinheiro ? 'Prejuízo no período' : 'SACs no período')) ?></p>
+            <p class="destaque-legenda" data-hero-legenda><?= e($desc ?: ($dinheiro ? 'Custo no período' : 'SACs no período')) ?></p>
             <ol class="ranking">
                 <?php foreach ($dados as $rotulo => $qtd):
                     $pct = round($qtd / $base * 100);
@@ -38,7 +38,7 @@ $ranking = function (string $titulo, array $dados, string $vazio = 'Sem registro
                     <li>
                         <a href="<?= e($linkLista(['q' => $rotulo])) ?>"
                            data-item-valor="<?= e($fmt($qtd)) ?>"
-                           data-item-texto="<?= e($rotulo) ?> · <?= $pct ?>% <?= $dinheiro ? 'do prejuízo' : 'do total' ?>">
+                           data-item-texto="<?= e($rotulo) ?> · <?= $pct ?>% <?= $dinheiro ? 'do custo' : 'do total' ?>">
                             <span class="r-ponto" aria-hidden="true"></span>
                             <span class="r-rotulo"><?= e($rotulo) ?></span>
                             <span class="r-valor"><?= $dinheiro ? e(moeda((float) $qtd, false)) : $qtd ?></span>
@@ -98,7 +98,7 @@ $grafico = function (string $titulo, string $campo) use ($ind, $linkLista, $semV
                     pico <b><?= e($fmt(max($valores))) ?></b>
                 </span>
             </div>
-            <p class="destaque-legenda" data-hero-legenda><?= $dinheiro ? 'Prejuízo no período' : 'Total no período' ?></p>
+            <p class="destaque-legenda" data-hero-legenda><?= $dinheiro ? 'Custo no período' : 'Total no período' ?></p>
             <div class="grafico-area" data-area tabindex="0" role="img"
                  aria-label="<?= e($titulo) ?>, <?= mb_strtolower($porGrao) ?>. Use as setas para ver cada ponto.">
             </div>
@@ -159,7 +159,7 @@ $grafico = function (string $titulo, string $campo) use ($ind, $linkLista, $semV
         <span class="kpi-sub"><?= $ind['tipo_principal'] ? 'Principal: ' . e($ind['tipo_principal']) : 'Sem registros' ?></span>
     </a>
     <div class="kpi kpi-destaque">
-        <span class="kpi-rotulo">Prejuízo</span>
+        <span class="kpi-rotulo">Custo do SAC</span>
         <strong><?= moeda($ind['valor_total'], $ind['valor_total'] < 10000) ?></strong>
         <span class="kpi-sub">
             <?= $ind['com_valor'] ? 'Média de ' . moeda($ind['valor_medio']) . ' por SAC' : 'Nenhum valor lançado' ?>
@@ -201,12 +201,12 @@ $grafico = function (string $titulo, string $campo) use ($ind, $linkLista, $semV
 
 <div class="grade-2">
     <?php $grafico('Reclamações', 'qtd') ?>
-    <?php $grafico('Prejuízo', 'valor') ?>
+    <?php $grafico('Custo', 'valor') ?>
 </div>
 
 <div class="grade-4">
-    <?php $ranking('Prejuízo por reclamação', $ind['valor_descricao'], $semValor, true) ?>
-    <?php $ranking('Prejuízo por produto', $ind['valor_produto'], $semValor, true, 'Prejuízo no período · dividido entre produtos do SAC') ?>
+    <?php $ranking('Custo por reclamação', $ind['valor_descricao'], $semValor, true) ?>
+    <?php $ranking('Custo por produto', $ind['valor_produto'], $semValor, true, 'Custo no período · dividido entre produtos do SAC') ?>
     <?php $ranking('Principais reclamações', $ind['top_descricao']) ?>
     <?php $ranking('Produtos com mais SACs', $ind['top_produto']) ?>
     <?php $ranking('Lotes com mais SACs', $ind['top_lote']) ?>
