@@ -42,6 +42,12 @@ try {
 
     /* ---------- dashboard ---------- */
     if ($rota === '/') {
+        if (!Auth::pode('dashboard')) {
+            $inicio = Auth::inicio();
+            if ($inicio) redirecionar($inicio);
+            view('erro', ['titulo' => 'Acesso ainda não liberado', 'msg' => 'Seu acesso ao SAC ainda não foi liberado. Fale com um administrador.', 'sair' => true]);
+            exit;
+        }
         [$de, $ate] = periodo($_GET['periodo'] ?? '12m', $_GET['de'] ?? '', $_GET['ate'] ?? '');
         $lista = Sac::listar(['de' => $de, 'ate' => $ate, 'tipo' => $_GET['tipo'] ?? '']);
         view('dashboard', [
@@ -55,6 +61,7 @@ try {
 
     /* ---------- lista e exportação ---------- */
     if ($rota === '/reclamacoes' || $rota === '/exportar') {
+        $rota === '/exportar' ? Auth::exigir('reclamacoes', 'dashboard') : Auth::exigir('reclamacoes');
         $f = [
             'de'     => $_GET['de'] ?? '',
             'ate'    => $_GET['ate'] ?? '',
@@ -80,6 +87,7 @@ try {
 
     /* ---------- token para o navegador enviar um anexo direto ao Blob ---------- */
     if ($rota === '/anexos/token' && $metodo === 'POST') {
+        Auth::exigir('nova', 'reclamacoes');
         $evento = json_decode(file_get_contents('php://input'), true) ?: [];
         header('Content-Type: application/json');
         if (($evento['type'] ?? '') !== 'blob.generate-client-token') {
@@ -96,6 +104,7 @@ try {
 
     /* ---------- nova reclamação ---------- */
     if ($rota === '/reclamacoes/nova') {
+        Auth::exigir('nova');
         $r = ['data' => date('Y-m-d'), 'hora' => date('H:i'), 'tipo' => opcoes('tipos')[0], 'anexos' => []];
         $erros = [];
         if ($metodo === 'POST') {
@@ -104,7 +113,8 @@ try {
             if (!$erros) {
                 $id = Sac::criar($r, $usuario);
                 avisar('Reclamação registrada.');
-                redirecionar('/reclamacoes/' . $id);
+                // quem só pode registrar volta para um formulário em branco
+                redirecionar(Auth::pode('reclamacoes') ? '/reclamacoes/' . $id : '/reclamacoes/nova');
             }
         }
         view('form', ['titulo' => 'Nova reclamação', 'r' => $r, 'erros' => $erros, 'sug' => Sac::sugestoes()]);
@@ -144,6 +154,7 @@ try {
 
     /* ---------- ver / editar / excluir ---------- */
     if (preg_match('#^/reclamacoes/([A-Za-z0-9]+)(/excluir)?$#', $rota, $m)) {
+        Auth::exigir('reclamacoes');
         $atual = Sac::buscar($m[1]) ?? throw new DomainException('Reclamação não encontrada.');
 
         if (!empty($m[2])) {
@@ -174,27 +185,59 @@ try {
     }
 
     /* ---------- usuários (só administradores) ---------- */
-    if ($rota === '/usuarios') {
+    if (preg_match('#^/usuarios(?:/([A-Za-z0-9]+)(/excluir)?)?$#', $rota, $m)) {
         if (!Auth::admin()) {
             http_response_code(403);
-            view('erro', ['titulo' => 'Acesso restrito', 'msg' => 'Somente administradores podem cadastrar usuários.']);
+            view('erro', ['titulo' => 'Acesso restrito', 'msg' => 'Somente administradores podem gerenciar usuários.']);
             exit;
         }
-        $novo = [];
+
+        // lista + cadastro de novo usuário
+        if (empty($m[1])) {
+            $novo = [];
+            $erros = [];
+            if ($metodo === 'POST') {
+                [$novo, $erros] = Usuarios::criar($_POST, $usuario);
+                if (!$erros) {
+                    avisar('Usuário ' . $novo['nome'] . ' cadastrado. Ele já pode entrar com o e-mail e a senha informados.');
+                    redirecionar('/usuarios');
+                }
+            }
+            view('usuarios', ['titulo' => 'Usuários', 'novo' => $novo, 'erros' => $erros, 'lista' => Usuarios::listarTodos(), 'eu' => $usuario]);
+            exit;
+        }
+
+        $alvo = Usuarios::buscar($m[1]) ?? throw new DomainException('Usuário não encontrado.');
+
+        // exclusão (só usuários criados pelo SAC, nunca o próprio)
+        if (!empty($m[2])) {
+            if ($metodo !== 'POST') redirecionar('/usuarios/' . $alvo['id']);
+            $falha = Usuarios::excluir($alvo, $usuario);
+            if ($falha) {
+                avisar($falha, 'erro');
+                redirecionar('/usuarios/' . $alvo['id']);
+            }
+            avisar('Usuário ' . ($alvo['nome'] ?? $alvo['email']) . ' excluído.');
+            redirecionar('/usuarios');
+        }
+
+        // edição
         $erros = [];
+        $form = $alvo;
         if ($metodo === 'POST') {
-            [$novo, $erros] = Usuarios::criar($_POST, $usuario);
+            [$form, $erros] = Usuarios::salvar($alvo, $_POST, $usuario);
             if (!$erros) {
-                avisar('Usuário ' . $novo['nome'] . ' cadastrado. Ele já pode entrar com o e-mail e a senha informados.');
+                avisar('Alterações em ' . ($form['nome'] ?? $form['email']) . ' salvas.');
                 redirecionar('/usuarios');
             }
         }
-        view('usuarios', ['titulo' => 'Usuários', 'novo' => $novo, 'erros' => $erros, 'lista' => Usuarios::listarSac()]);
+        view('usuario-editar', ['titulo' => $alvo['nome'] ?? $alvo['email'], 'u' => $form, 'erros' => $erros, 'eu' => $usuario]);
         exit;
     }
 
     /* ---------- importação ---------- */
     if ($rota === '/importar') {
+        Auth::exigir('importar');
         $res = null;
         $erro = null;
         if ($metodo === 'POST' && isset($_POST['linhas'])) {

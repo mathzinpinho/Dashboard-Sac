@@ -24,8 +24,8 @@
             <ul class="lista-erros"><?php foreach ($res['errosLinhas'] as $l): ?><li><?= e($l) ?></li><?php endforeach ?></ul>
         <?php endif ?>
         <div class="acoes">
-            <a class="botao primario" href="/">Ir para o dashboard</a>
-            <a class="botao" href="/reclamacoes">Ver reclamações</a>
+            <?php if (Auth::pode('dashboard')): ?><a class="botao primario" href="/">Ir para o dashboard</a><?php endif ?>
+            <?php if (Auth::pode('reclamacoes')): ?><a class="botao" href="/reclamacoes">Ver reclamações</a><?php endif ?>
         </div>
     </section>
 

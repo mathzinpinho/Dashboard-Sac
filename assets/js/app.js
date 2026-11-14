@@ -85,6 +85,56 @@
     conferir();
   }
 
+  // usuários: abrir/fechar o cadastro de novo usuário
+  const novoUsuario = document.getElementById('novo-usuario');
+  if (novoUsuario) {
+    document.querySelectorAll('[data-abrir-novo]').forEach((a) => a.addEventListener('click', (ev) => {
+      ev.preventDefault();
+      novoUsuario.open = true;
+      novoUsuario.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      novoUsuario.querySelector('input[name=nome]').focus({ preventScroll: true });
+    }));
+    novoUsuario.querySelector('[data-fechar-novo]').addEventListener('click', () => { novoUsuario.open = false; });
+  }
+
+  // usuários: busca e filtro por origem
+  const listaUsuarios = document.querySelector('[data-lista-usuarios]');
+  if (listaUsuarios) {
+    const busca = listaUsuarios.querySelector('[data-busca-usuario]');
+    const botoes = listaUsuarios.querySelectorAll('[data-origem]:not(tr)');
+    const linhas = listaUsuarios.querySelectorAll('tbody tr');
+    const vazio = listaUsuarios.querySelector('[data-sem-resultado]');
+    let origem = '';
+    const filtrar = () => {
+      const q = busca.value.trim().toLowerCase();
+      let visiveis = 0;
+      linhas.forEach((tr) => {
+        const ok = (!origem || tr.dataset.origem === origem) && (!q || tr.dataset.texto.includes(q));
+        tr.hidden = !ok;
+        if (ok) visiveis++;
+      });
+      vazio.hidden = visiveis > 0;
+    };
+    busca.addEventListener('input', filtrar);
+    botoes.forEach((b) => b.addEventListener('click', () => {
+      botoes.forEach((x) => x.classList.toggle('ativo', x === b));
+      origem = b.dataset.origem;
+      filtrar();
+    }));
+  }
+
+  // edição de usuário: administrador vê tudo, então as chaves ficam esmaecidas
+  const formUsuario = document.querySelector('[data-editar-usuario]');
+  if (formUsuario) {
+    const telas = formUsuario.querySelector('[data-telas]');
+    const dica = formUsuario.querySelector('[data-dica-admin]');
+    formUsuario.querySelectorAll('input[name=tipo]').forEach((r) => r.addEventListener('change', () => {
+      const admin = formUsuario.querySelector('input[name=tipo]:checked').value === 'administrador';
+      telas.classList.toggle('desativada', admin);
+      dica.hidden = !admin;
+    }));
+  }
+
   // área de soltar arquivo na importação
   const soltar = document.querySelector('[data-soltar]');
   if (soltar) {

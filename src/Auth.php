@@ -78,19 +78,61 @@ final class Auth
         cookie(self::COOKIE, '', 0);
     }
 
+    /**
+     * Usuário logado. Os dados vêm do banco a cada requisição (uma consulta), assim mudanças de
+     * tipo, telas ou exclusão feitas na tela de Usuários valem no próximo clique, sem sair e entrar.
+     */
     public static function usuario(): ?array
     {
         static $u = false;
         if ($u === false) {
+            $u = null;
             $t = $_COOKIE[self::COOKIE] ?? '';
-            $u = $t ? self::verificar($t) : null;
+            $token = $t ? self::verificar($t) : null;
+            $doc = $token ? db()->findOne('usuarios', ['id' => (string) $token['id']]) : null;
+            if ($doc) {
+                $u = [
+                    'id'    => $doc['id'],
+                    'nome'  => $doc['nome'] ?? $doc['email'],
+                    'email' => $doc['email'],
+                    'admin' => Usuarios::ehAdmin($doc),
+                    'telas' => Usuarios::telas($doc),
+                ];
+            }
         }
         return $u;
     }
 
     public static function admin(): bool
     {
-        return (self::usuario()['cargo'] ?? '') === 'administrador';
+        return (bool) (self::usuario()['admin'] ?? false);
+    }
+
+    /** O usuário logado pode abrir esta tela? (ver Usuarios::TELAS) */
+    public static function pode(string $tela): bool
+    {
+        return in_array($tela, self::usuario()['telas'] ?? [], true);
+    }
+
+    /** Bloqueia a página (403) se o usuário não tiver nenhuma das telas */
+    public static function exigir(string ...$telas): void
+    {
+        foreach ($telas as $t) {
+            if (self::pode($t)) return;
+        }
+        http_response_code(403);
+        view('erro', ['titulo' => 'Acesso restrito', 'msg' => 'Você não tem acesso a esta tela. Fale com um administrador do SAC.']);
+        exit;
+    }
+
+    /** Primeira tela liberada para o usuário (para onde mandar quem não pode ver o dashboard) */
+    public static function inicio(): ?string
+    {
+        $rotas = ['dashboard' => '/', 'reclamacoes' => '/reclamacoes', 'nova' => '/reclamacoes/nova', 'importar' => '/importar'];
+        foreach ($rotas as $tela => $rota) {
+            if (self::pode($tela)) return $rota;
+        }
+        return self::admin() ? '/usuarios' : null;
     }
 
     /** Token anti-CSRF derivado do token de login */

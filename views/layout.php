@@ -19,6 +19,11 @@ $menu = [
     ],
     'Dados'         => [['importar', '/importar', 'enviar', 'Importar planilha']],
 ];
+// só as telas liberadas para o usuário; grupos que ficam vazios somem
+foreach ($menu as $grupo => $itens) {
+    $menu[$grupo] = array_values(array_filter($itens, fn($i) => Auth::pode($i[0])));
+    if (!$menu[$grupo]) unset($menu[$grupo]);
+}
 if (Auth::admin()) {
     $menu['Administração'] = [['usuarios', '/usuarios', 'usuarios', 'Usuários']];
 }
@@ -34,7 +39,7 @@ if (Auth::admin()) {
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
-    <link rel="stylesheet" href="/assets/css/app.css?v=16">
+    <link rel="stylesheet" href="/assets/css/app.css?v=17">
 </head>
 <body>
 <div class="app">
@@ -87,6 +92,6 @@ if (Auth::admin()) {
     </div>
 </div>
 
-<script src="/assets/js/app.js?v=6"></script>
+<script src="/assets/js/app.js?v=7"></script>
 </body>
 </html>
