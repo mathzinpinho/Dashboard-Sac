@@ -30,6 +30,7 @@ require RAIZ . '/src/helpers.php';
 require RAIZ . '/src/Db.php';
 require RAIZ . '/src/Auth.php';
 require RAIZ . '/src/Sac.php';
+require RAIZ . '/src/Xlsx.php';
 require RAIZ . '/src/Planilha.php';
 require RAIZ . '/src/Anexos.php';
 require RAIZ . '/src/Usuarios.php';

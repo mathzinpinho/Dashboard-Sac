@@ -15,7 +15,7 @@ Os campos seguem a aba **SAC** da planilha `planilha SAC.xlsx`, e o dashboard re
 | Página | O que faz |
 |---|---|
 | `/` | Dashboard: total, em aberto, finalizados, tempo médio de resolução, produtos, lotes, SACs por mês, rankings de reclamações, produtos, lotes, soluções, tipos e datas |
-| `/reclamacoes` | Lista com busca, filtros, paginação e exportação CSV (abre no Excel) |
+| `/reclamacoes` | Lista com busca, filtros, paginação e exportação em Excel (.xlsx) detalhada, com aba de resumo |
 | `/reclamacoes/nova` | Registro de nova reclamação |
 | `/reclamacoes/{id}` | Edição e finalização (o tempo de resolução é calculado sozinho) |
 | `/importar` | Importa a planilha .xlsx ou .csv, com prévia. Linhas que já foram importadas são ignoradas |

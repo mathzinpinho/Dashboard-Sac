@@ -63,7 +63,7 @@ try {
             'q'      => $_GET['q'] ?? '',
         ];
         $lista = Sac::listar($f);
-        if ($rota === '/exportar') Planilha::exportar($lista);
+        if ($rota === '/exportar') Planilha::exportar($lista, $f);
 
         $porPagina = 30;
         $pagina = max(1, (int) ($_GET['p'] ?? 1));

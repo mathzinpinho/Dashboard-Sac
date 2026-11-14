@@ -11,7 +11,7 @@ $ate_ = min($total, $pagina * $porPagina);
         <p class="pagina-desc"><?= numero($total) ?> registro<?= $total === 1 ? '' : 's' ?><?= $filtrado ? ' com os filtros aplicados' : '' ?></p>
     </div>
     <div class="pagina-acoes">
-        <a class="botao" href="/exportar<?= e(qs(['p' => null])) ?>"><?= icone('baixar') ?>Exportar CSV</a>
+        <a class="botao" href="/exportar<?= e(qs(['p' => null])) ?>"><?= icone('baixar') ?>Exportar Excel</a>
         <a class="botao primario" href="/reclamacoes/nova"><?= icone('mais') ?>Nova reclamação</a>
     </div>
 </header>

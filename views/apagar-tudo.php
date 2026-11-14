@@ -37,7 +37,7 @@ $cls = fn(string $c) => isset($erros[$c]) ? 'com-erro' : '';
             <span class="passo-n">1</span>
             <div>
                 <strong>Baixe uma cópia</strong>
-                <p class="mudo">O CSV pode ser importado de volta em Importar planilha. Fotos e vídeos não fazem parte do arquivo.</p>
+                <p class="mudo">A planilha (.xlsx) pode ser importada de volta em Importar planilha. Fotos e vídeos não fazem parte do arquivo.</p>
                 <a class="botao" href="/exportar"><?= icone('baixar') ?>Exportar todas as reclamações</a>
             </div>
         </div>
