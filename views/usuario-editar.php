@@ -9,8 +9,7 @@ $erro = fn(string $c) => isset($erros[$c]) ? '<span class="erro-campo">' . e($er
 $cls = fn(string $c) => isset($erros[$c]) ? 'com-erro' : '';
 $obr = '<span class="obrigatorio" aria-hidden="true">*</span>';
 $criado = Usuarios::dataIso($u['criadoEm'] ?? '');
-// administrador vindo da produção não deixa de ser administrador por aqui
-$adminFixo = !$sac && $admin;
+$adminProducao = !$sac && ($u['cargo'] ?? 'administrador') === 'administrador';
 ?>
 <header class="pagina-cab">
     <div>
@@ -30,7 +29,7 @@ $adminFixo = !$sac && $admin;
 <?php endif ?>
 
 <?php if (!$sac): ?>
-    <div class="aviso aviso-info" role="note"><?= icone('cadeado') ?><span>Cadastro gerenciado pelo sistema de produção. Aqui só dá para ajustar as telas do SAC; nome, e-mail, senha, tipo e exclusão são feitos por lá.</span></div>
+    <div class="aviso aviso-info" role="note"><?= icone('cadeado') ?><span>Cadastro gerenciado pelo sistema de produção. Aqui dá para ajustar o tipo e as telas dentro do SAC; nome, e-mail, senha e exclusão são feitos por lá.</span></div>
 <?php endif ?>
 
 <form method="post" action="/usuarios/<?= e($u['id']) ?>" class="formulario" autocomplete="off" data-editar-usuario>
@@ -60,17 +59,17 @@ $adminFixo = !$sac && $admin;
             <div class="<?= $cls('tipo') ?>">
                 <div class="escolha-tipo" role="radiogroup" aria-label="Tipo de usuário">
                     <label class="opcao-tipo">
-                        <input type="radio" name="tipo" value="operador" <?= !$admin ? 'checked' : '' ?> <?= $sac && !($euMesmo && $admin) ? '' : 'disabled' ?>>
+                        <input type="radio" name="tipo" value="operador" <?= !$admin ? 'checked' : '' ?> <?= $euMesmo && $admin ? 'disabled' : '' ?>>
                         <span><strong>Operador</strong><small>Vê só as telas liberadas abaixo</small></span>
                     </label>
                     <label class="opcao-tipo">
-                        <input type="radio" name="tipo" value="administrador" <?= $admin ? 'checked' : '' ?> <?= $sac ? '' : 'disabled' ?>>
+                        <input type="radio" name="tipo" value="administrador" <?= $admin ? 'checked' : '' ?>>
                         <span><strong>Administrador</strong><small>Todas as telas, inclusive Usuários</small></span>
                     </label>
                 </div>
                 <?= $erro('tipo') ?>
-                <?php if ($euMesmo && $admin && $sac): ?><p class="dica-campo">Você não pode tirar o seu próprio acesso de administrador.</p><?php endif ?>
-                <?php if ($adminFixo): ?><p class="dica-campo">É administrador no sistema de produção, por isso tem acesso total aqui.</p><?php endif ?>
+                <?php if ($euMesmo && $admin): ?><p class="dica-campo">Você não pode tirar o seu próprio acesso de administrador.</p><?php endif ?>
+                <?php if ($adminProducao): ?><p class="dica-campo">É administrador no sistema de produção. Escolher Operador muda só o acesso dele no SAC; lá ele continua administrador.</p><?php endif ?>
             </div>
         </div>
 

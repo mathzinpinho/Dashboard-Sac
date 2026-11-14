@@ -5,11 +5,12 @@
  * - Criados pelo SAC: cargo "operador" e área "sac". Entram no SAC e, no sistema de produção,
  *   não veem nenhum módulo. Podem ser editados por completo aqui (dados, tipo, senha, exclusão).
  * - Vindos do sistema de produção: aqui só dá para ajustar quais telas do SAC eles veem.
- *   Senha, cargo e exclusão continuam sendo feitos pelo sistema de produção.
+ *   Aqui dá para ajustar o tipo (só dentro do SAC) e as telas; senha e exclusão continuam sendo feitos por lá.
  *
  * Campos próprios do SAC (o sistema de produção ignora):
  * - telasSac: telas liberadas (ver TELAS). Sem o campo, todas as telas ficam liberadas.
- * - cargoSac: "administrador" ou "operador" dentro do SAC, para não mexer no "cargo" da produção.
+ * - cargoSac: "administrador" ou "operador" dentro do SAC, para qualquer usuário. Quando existe, vale mais que o
+ *   "cargo" da produção (que nunca é alterado). Sem ele, o tipo segue o "cargo" da produção.
  *
  * Atenção: se um administrador editar um usuário do SAC pela tela do sistema de produção, a área "sac"
  * vira "todas" lá (o sistema de produção não conhece essa área).
@@ -48,8 +49,10 @@ final class Usuarios
 
     public static function ehAdmin(array $u): bool
     {
-        // sem cargo = administrador, como já era no login (usuários antigos do sistema de produção)
-        return ($u['cargo'] ?? 'administrador') === 'administrador' || ($u['cargoSac'] ?? '') === 'administrador';
+        // o tipo escolhido no SAC vale para qualquer usuário (inclusive admin da produção rebaixado a operador aqui)
+        if (in_array($u['cargoSac'] ?? null, ['administrador', 'operador'], true)) return $u['cargoSac'] === 'administrador';
+        // sem tipo no SAC: segue o cargo da produção; sem cargo = administrador, como já era no login
+        return ($u['cargo'] ?? 'administrador') === 'administrador';
     }
 
     /** Telas que o usuário pode abrir (administrador: todas) */
@@ -141,13 +144,17 @@ final class Usuarios
         $erros = [];
         $campos = ['telasSac' => self::telasDoFormulario($in)];
 
-        if (self::ehDoSac($u)) {
-            $campos += self::validarDados($in, $erros, $u['id']);
-            $admin = ($in['tipo'] ?? '') === 'administrador';
+        // tipo dentro do SAC: vale para todos; o "cargo" do sistema de produção nunca é alterado
+        if (in_array($in['tipo'] ?? null, ['administrador', 'operador'], true)) {
+            $admin = $in['tipo'] === 'administrador';
             if (!$admin && $u['id'] === $editor['id'] && self::ehAdmin($u)) {
                 $erros['tipo'] = 'Você não pode tirar o seu próprio acesso de administrador.';
             }
             $campos['cargoSac'] = $admin ? 'administrador' : 'operador';
+        }
+
+        if (self::ehDoSac($u)) {
+            $campos += self::validarDados($in, $erros, $u['id']);
             $senha = self::validarSenha($in, $erros, false);
             if ($senha !== null && !$erros) $campos['senhaHash'] = self::hash($senha);
         }
