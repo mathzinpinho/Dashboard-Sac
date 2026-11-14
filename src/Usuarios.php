@@ -98,7 +98,11 @@ final class Usuarios
             $erros['email'] = 'E-mail inválido.';
         } else {
             $outro = db()->findOne('usuarios', ['email' => $d['email']]);
-            if ($outro && $outro['id'] !== $id) $erros['email'] = 'Já existe um usuário com este e-mail.';
+            if ($outro && $outro['id'] !== $id) {
+                $erros['email'] = self::removido($outro)
+                    ? 'Este e-mail é de um usuário removido do SAC. Abra-o no filtro "Removidos" e use "Restaurar acesso".'
+                    : 'Já existe um usuário com este e-mail.';
+            }
         }
         return $d;
     }
@@ -173,28 +177,24 @@ final class Usuarios
         return [$novo, []];
     }
 
-    /** Usuário do sistema de produção que perdeu o acesso ao SAC (o login dele lá continua) */
+    /** Usuário que perdeu o acesso ao SAC (o cadastro continua no banco e o login do sistema de produção não muda) */
     public static function removido(array $u): bool
     {
-        return !self::ehDoSac($u) && !empty($u['removidoSac']);
+        return !empty($u['removidoSac']);
     }
 
     /**
-     * Exclui o usuário. Criado pelo SAC: apaga o cadastro. Do sistema de produção: só tira o acesso ao SAC
-     * (removidoSac), sem mexer no login de lá. Retorna a mensagem de erro, ou null se deu certo.
+     * "Exclui" o usuário só do SAC: marca removidoSac e ele não entra mais aqui. Nada é apagado do banco
+     * (a coleção é compartilhada com o sistema de produção). Retorna a mensagem de erro, ou null se deu certo.
      */
     public static function excluir(array $u, array $editor): ?string
     {
         if ($u['id'] === $editor['id']) return 'Você não pode excluir o seu próprio cadastro.';
-        if (self::ehDoSac($u)) {
-            db()->delete('usuarios', $u['id']);
-        } else {
-            db()->update('usuarios', $u['id'], ['removidoSac' => true, 'alteradoEm' => self::agora(), 'alteradoPor' => $editor['nome']]);
-        }
+        db()->update('usuarios', $u['id'], ['removidoSac' => true, 'alteradoEm' => self::agora(), 'alteradoPor' => $editor['nome']]);
         return null;
     }
 
-    /** Devolve o acesso ao SAC a um usuário do sistema de produção que tinha sido removido */
+    /** Devolve o acesso ao SAC a um usuário removido */
     public static function restaurar(array $u, array $editor): void
     {
         db()->update('usuarios', $u['id'], ['removidoSac' => false, 'alteradoEm' => self::agora(), 'alteradoPor' => $editor['nome']]);

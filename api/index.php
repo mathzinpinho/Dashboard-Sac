@@ -215,7 +215,7 @@ try {
 
         $nomeAlvo = $alvo['nome'] ?? $alvo['email'];
 
-        // exclusão: usuário do SAC é apagado; do sistema de produção só perde o acesso ao SAC. Nunca o próprio.
+        // exclusão: só tira o acesso ao SAC, nada é apagado do banco. Nunca o próprio.
         if (($m[2] ?? '') === '/excluir') {
             if ($metodo !== 'POST') redirecionar('/usuarios/' . $alvo['id']);
             $falha = Usuarios::excluir($alvo, $usuario);
@@ -223,13 +223,11 @@ try {
                 avisar($falha, 'erro');
                 redirecionar('/usuarios/' . $alvo['id']);
             }
-            avisar(Usuarios::ehDoSac($alvo)
-                ? "Usuário $nomeAlvo excluído."
-                : "$nomeAlvo não acessa mais o SAC. O login no sistema de produção continua funcionando.");
+            avisar("$nomeAlvo foi excluído do SAC. O cadastro no sistema de produção não foi alterado.");
             redirecionar('/usuarios');
         }
 
-        // devolve o acesso ao SAC a um usuário do sistema de produção removido
+        // devolve o acesso ao SAC a um usuário removido
         if (($m[2] ?? '') === '/restaurar') {
             if ($metodo === 'POST' && Usuarios::removido($alvo)) {
                 Usuarios::restaurar($alvo, $usuario);

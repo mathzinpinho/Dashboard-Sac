@@ -4,7 +4,7 @@ $erro = fn(string $c) => isset($erros[$c]) ? '<span class="erro-campo">' . e($er
 $cls = fn(string $c) => isset($erros[$c]) ? 'com-erro' : '';
 $obr = '<span class="obrigatorio" aria-hidden="true">*</span>';
 $totalTelas = count(Usuarios::TELAS);
-// removidos do SAC (usuários da produção) ficam fora da contagem e só aparecem no filtro "Removidos"
+// excluídos do SAC ficam fora da contagem e só aparecem no filtro "Removidos"
 $removidos = count(array_filter($lista, [Usuarios::class, 'removido']));
 $ativos = count($lista) - $removidos;
 $doSac = count(array_filter($lista, [Usuarios::class, 'ehDoSac']));

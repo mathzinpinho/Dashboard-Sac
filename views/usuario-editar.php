@@ -32,7 +32,7 @@ $removido = Usuarios::removido($u);
 <?php if ($removido): ?>
     <div class="aviso aviso-erro aviso-acao" role="status">
         <?= icone('alerta') ?>
-        <span>Este usuário foi removido do SAC e não consegue entrar aqui. O login no sistema de produção continua funcionando.</span>
+        <span>Este usuário foi excluído do SAC e não consegue entrar aqui. O cadastro no sistema de produção não foi alterado.</span>
         <form method="post" action="/usuarios/<?= e($u['id']) ?>/restaurar">
             <input type="hidden" name="_csrf" value="<?= e(Auth::csrf()) ?>">
             <button class="botao pequeno">Restaurar acesso</button>
@@ -129,15 +129,9 @@ $removido = Usuarios::removido($u);
             <?= icone('lixeira', 18) ?>
             <div>
                 <h2>Excluir usuário</h2>
-                <?php if ($sac): ?>
-                    <p>Apaga o cadastro de <?= e($nome) ?>. Ele perde o login no SAC. Não dá para desfazer.</p>
-                <?php else: ?>
-                    <p><?= e($nome) ?> deixa de acessar o SAC. O login no sistema de produção continua funcionando. Dá para desfazer depois.</p>
-                <?php endif ?>
+                <p><?= e($nome) ?> deixa de acessar o SAC. O cadastro no sistema de produção não é alterado, e dá para desfazer em "Restaurar acesso".</p>
             </div>
-            <form method="post" action="/usuarios/<?= e($u['id']) ?>/excluir" data-confirmar="<?= $sac
-                ? 'Excluir o cadastro de ' . e($nome) . '? Essa ação não pode ser desfeita.'
-                : 'Tirar o acesso de ' . e($nome) . ' ao SAC? O login no sistema de produção continua funcionando.' ?>">
+            <form method="post" action="/usuarios/<?= e($u['id']) ?>/excluir" data-confirmar="Excluir <?= e($nome) ?> do SAC? O cadastro no sistema de produção não é alterado.">
                 <input type="hidden" name="_csrf" value="<?= e(Auth::csrf()) ?>">
                 <button class="botao perigo"><?= icone('lixeira') ?>Excluir usuário</button>
             </form>
