@@ -279,6 +279,9 @@ input[type="search"]::-webkit-search-cancel-button { filter: invert(0.6); }
   font-size: 13px;
 }
 .aviso .icone { margin-top: 1px; }
+.aviso-acao { align-items: center; flex-wrap: wrap; }
+.aviso-acao > span { flex: 1; min-width: 220px; }
+.aviso-acao .icone { margin-top: 0; }
 .aviso-ok { background: var(--ok-suave); border-color: rgba(69, 185, 124, 0.35); color: #b9ecd0; }
 .aviso-ok .icone { color: var(--ok); }
 .aviso-erro { background: var(--perigo-suave); border-color: var(--perigo-borda); color: #f8c4c4; }

@@ -48,7 +48,7 @@ final class Auth
     public static function entrar(string $email, #[\SensitiveParameter] string $senha): ?string
     {
         $u = self::conferirSenha($email, $senha);
-        if (!$u) return null;
+        if (!$u || Usuarios::removido($u)) return null; // removido do SAC: o login da produção não vale aqui
 
         $agora = time();
         $token = self::assinar([
@@ -90,7 +90,7 @@ final class Auth
             $t = $_COOKIE[self::COOKIE] ?? '';
             $token = $t ? self::verificar($t) : null;
             $doc = $token ? db()->findOne('usuarios', ['id' => (string) $token['id']]) : null;
-            if ($doc) {
+            if ($doc && !Usuarios::removido($doc)) {
                 $u = [
                     'id'    => $doc['id'],
                     'nome'  => $doc['nome'] ?? $doc['email'],

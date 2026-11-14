@@ -10,6 +10,7 @@ $cls = fn(string $c) => isset($erros[$c]) ? 'com-erro' : '';
 $obr = '<span class="obrigatorio" aria-hidden="true">*</span>';
 $criado = Usuarios::dataIso($u['criadoEm'] ?? '');
 $adminProducao = !$sac && ($u['cargo'] ?? 'administrador') === 'administrador';
+$removido = Usuarios::removido($u);
 ?>
 <header class="pagina-cab">
     <div>
@@ -28,8 +29,17 @@ $adminProducao = !$sac && ($u['cargo'] ?? 'administrador') === 'administrador';
     <div class="aviso aviso-erro" role="alert"><?= icone('alerta') ?><span>Revise os campos destacados.</span></div>
 <?php endif ?>
 
-<?php if (!$sac): ?>
-    <div class="aviso aviso-info" role="note"><?= icone('cadeado') ?><span>Cadastro gerenciado pelo sistema de produção. Aqui dá para ajustar o tipo e as telas dentro do SAC; nome, e-mail, senha e exclusão são feitos por lá.</span></div>
+<?php if ($removido): ?>
+    <div class="aviso aviso-erro aviso-acao" role="status">
+        <?= icone('alerta') ?>
+        <span>Este usuário foi removido do SAC e não consegue entrar aqui. O login no sistema de produção continua funcionando.</span>
+        <form method="post" action="/usuarios/<?= e($u['id']) ?>/restaurar">
+            <input type="hidden" name="_csrf" value="<?= e(Auth::csrf()) ?>">
+            <button class="botao pequeno">Restaurar acesso</button>
+        </form>
+    </div>
+<?php elseif (!$sac): ?>
+    <div class="aviso aviso-info" role="note"><?= icone('cadeado') ?><span>Cadastro gerenciado pelo sistema de produção. Aqui dá para ajustar o tipo e as telas dentro do SAC; nome, e-mail e senha são alterados por lá.</span></div>
 <?php endif ?>
 
 <form method="post" action="/usuarios/<?= e($u['id']) ?>" class="formulario" autocomplete="off" data-editar-usuario>
@@ -113,15 +123,21 @@ $adminProducao = !$sac && ($u['cargo'] ?? 'administrador') === 'administrador';
     </section>
 </form>
 
-<?php if ($sac && !$euMesmo): ?>
+<?php if (!$euMesmo && !$removido): ?>
     <section class="cartao zona-perigo">
         <div class="zona-perigo-cab excluir-usuario">
             <?= icone('lixeira', 18) ?>
             <div>
-                <h2>Excluir cadastro</h2>
-                <p>Remove o login de <?= e($nome) ?> do SAC e do sistema de produção. Não dá para desfazer.</p>
+                <h2>Excluir usuário</h2>
+                <?php if ($sac): ?>
+                    <p>Apaga o cadastro de <?= e($nome) ?>. Ele perde o login no SAC. Não dá para desfazer.</p>
+                <?php else: ?>
+                    <p><?= e($nome) ?> deixa de acessar o SAC. O login no sistema de produção continua funcionando. Dá para desfazer depois.</p>
+                <?php endif ?>
             </div>
-            <form method="post" action="/usuarios/<?= e($u['id']) ?>/excluir" data-confirmar="Excluir o cadastro de <?= e($nome) ?>? Essa ação não pode ser desfeita.">
+            <form method="post" action="/usuarios/<?= e($u['id']) ?>/excluir" data-confirmar="<?= $sac
+                ? 'Excluir o cadastro de ' . e($nome) . '? Essa ação não pode ser desfeita.'
+                : 'Tirar o acesso de ' . e($nome) . ' ao SAC? O login no sistema de produção continua funcionando.' ?>">
                 <input type="hidden" name="_csrf" value="<?= e(Auth::csrf()) ?>">
                 <button class="botao perigo"><?= icone('lixeira') ?>Excluir usuário</button>
             </form>

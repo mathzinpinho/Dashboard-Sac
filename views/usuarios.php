@@ -4,6 +4,9 @@ $erro = fn(string $c) => isset($erros[$c]) ? '<span class="erro-campo">' . e($er
 $cls = fn(string $c) => isset($erros[$c]) ? 'com-erro' : '';
 $obr = '<span class="obrigatorio" aria-hidden="true">*</span>';
 $totalTelas = count(Usuarios::TELAS);
+// removidos do SAC (usuários da produção) ficam fora da contagem e só aparecem no filtro "Removidos"
+$removidos = count(array_filter($lista, [Usuarios::class, 'removido']));
+$ativos = count($lista) - $removidos;
 $doSac = count(array_filter($lista, [Usuarios::class, 'ehDoSac']));
 ?>
 <header class="pagina-cab">
@@ -55,7 +58,7 @@ $doSac = count(array_filter($lista, [Usuarios::class, 'ehDoSac']));
 <section class="cartao sem-padding" data-lista-usuarios>
     <div class="cartao-cab">
         <div>
-            <h2>Todos os usuários <span class="mudo">· <?= count($lista) ?></span></h2>
+            <h2>Todos os usuários <span class="mudo">· <?= $ativos ?></span></h2>
             <span class="cartao-desc">Cadastrados pelo SAC e pelo sistema de produção.</span>
         </div>
     </div>
@@ -67,7 +70,8 @@ $doSac = count(array_filter($lista, [Usuarios::class, 'ehDoSac']));
         <div class="segmentado" role="group" aria-label="Origem">
             <button type="button" class="ativo" data-origem="">Todos</button>
             <button type="button" data-origem="sac">SAC <span class="mudo"><?= $doSac ?></span></button>
-            <button type="button" data-origem="producao">Produção <span class="mudo"><?= count($lista) - $doSac ?></span></button>
+            <button type="button" data-origem="producao">Produção <span class="mudo"><?= $ativos - $doSac ?></span></button>
+            <?php if ($removidos): ?><button type="button" data-origem="removido">Removidos <span class="mudo"><?= $removidos ?></span></button><?php endif ?>
         </div>
     </div>
     <div class="tabela-rolagem">
@@ -77,10 +81,11 @@ $doSac = count(array_filter($lista, [Usuarios::class, 'ehDoSac']));
             <?php foreach ($lista as $u):
                 $sac = Usuarios::ehDoSac($u);
                 $admin = Usuarios::ehAdmin($u);
+                $removido = Usuarios::removido($u);
                 $n = count(Usuarios::telas($u));
                 $nome = $u['nome'] ?? '';
                 ?>
-                <tr data-href="/usuarios/<?= e($u['id']) ?>" data-origem="<?= $sac ? 'sac' : 'producao' ?>" data-texto="<?= e(mb_strtolower($nome . ' ' . ($u['email'] ?? ''))) ?>">
+                <tr data-href="/usuarios/<?= e($u['id']) ?>" data-origem="<?= $removido ? 'removido' : ($sac ? 'sac' : 'producao') ?>"<?= $removido ? ' hidden' : '' ?> data-texto="<?= e(mb_strtolower($nome . ' ' . ($u['email'] ?? ''))) ?>">
                     <td>
                         <span class="principal"><?= e($nome ?: '—') ?></span>
                         <?php if ($u['id'] === $eu['id']): ?><span class="mudo pequeno"> (você)</span><?php endif ?>
@@ -89,7 +94,8 @@ $doSac = count(array_filter($lista, [Usuarios::class, 'ehDoSac']));
                     <td><span class="selo <?= $admin ? 'selo-admin' : '' ?>"><?= $admin ? 'Administrador' : 'Operador' ?></span></td>
                     <td><span class="selo <?= $sac ? 'selo-aberto' : 'selo-final' ?>"><?= $sac ? 'SAC' : 'Produção' ?></span></td>
                     <td class="nowrap">
-                        <?php if ($admin): ?>Todas
+                        <?php if ($removido): ?><span class="alerta">Removido do SAC</span>
+                        <?php elseif ($admin): ?>Todas
                         <?php elseif ($n === 0): ?><span class="alerta">Nenhuma</span>
                         <?php else: ?><?= $n === $totalTelas ? 'Todas' : "$n de $totalTelas" ?>
                         <?php endif ?>

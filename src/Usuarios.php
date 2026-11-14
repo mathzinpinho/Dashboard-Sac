@@ -173,13 +173,31 @@ final class Usuarios
         return [$novo, []];
     }
 
-    /** Exclui um usuário criado pelo SAC. Retorna a mensagem de erro, ou null se excluiu. */
+    /** Usuário do sistema de produção que perdeu o acesso ao SAC (o login dele lá continua) */
+    public static function removido(array $u): bool
+    {
+        return !self::ehDoSac($u) && !empty($u['removidoSac']);
+    }
+
+    /**
+     * Exclui o usuário. Criado pelo SAC: apaga o cadastro. Do sistema de produção: só tira o acesso ao SAC
+     * (removidoSac), sem mexer no login de lá. Retorna a mensagem de erro, ou null se deu certo.
+     */
     public static function excluir(array $u, array $editor): ?string
     {
-        if (!self::ehDoSac($u)) return 'Este usuário é do sistema de produção e só pode ser excluído por lá.';
         if ($u['id'] === $editor['id']) return 'Você não pode excluir o seu próprio cadastro.';
-        db()->delete('usuarios', $u['id']);
+        if (self::ehDoSac($u)) {
+            db()->delete('usuarios', $u['id']);
+        } else {
+            db()->update('usuarios', $u['id'], ['removidoSac' => true, 'alteradoEm' => self::agora(), 'alteradoPor' => $editor['nome']]);
+        }
         return null;
+    }
+
+    /** Devolve o acesso ao SAC a um usuário do sistema de produção que tinha sido removido */
+    public static function restaurar(array $u, array $editor): void
+    {
+        db()->update('usuarios', $u['id'], ['removidoSac' => false, 'alteradoEm' => self::agora(), 'alteradoPor' => $editor['nome']]);
     }
 
     /** No MongoDB a data vai como Date, igual ao sistema de produção */

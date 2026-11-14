@@ -12,8 +12,10 @@ Os campos seguem a aba **SAC** da planilha `planilha SAC.xlsx`, e o dashboard re
   - Usuários criados pelo SAC (cargo `operador`, área `sac`) podem ter nome, e-mail, tipo e senha alterados e ser excluídos.
     No sistema de produção eles não veem nenhum módulo. Se um administrador editar um desses usuários pela tela do sistema
     de produção, a área vira `todas` lá.
-  - Usuários do sistema de produção: aqui se ajustam o tipo (só dentro do SAC) e as telas. Nome, e-mail, senha e exclusão
-    continuam sendo feitos por lá. Um administrador da produção pode virar Operador no SAC e continua administrador lá.
+  - Usuários do sistema de produção: aqui se ajustam o tipo (só dentro do SAC) e as telas. Nome, e-mail e senha continuam
+    sendo alterados por lá. Um administrador da produção pode virar Operador no SAC e continua administrador lá.
+    "Excluir usuário" só tira o acesso ao SAC (`removidoSac`): ele não entra mais aqui, o login da produção continua, e dá
+    para desfazer em "Restaurar acesso" (filtro "Removidos" na lista).
   - Campos próprios do SAC na coleção `usuarios` (o sistema de produção ignora): `telasSac` (telas liberadas; sem o campo,
     todas) e `cargoSac` (`administrador` ou `operador` dentro do SAC; quando existe, vale mais que o `cargo` da produção,
     que nunca é alterado).

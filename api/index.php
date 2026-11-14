@@ -26,7 +26,11 @@ try {
         $erro = null;
         if ($metodo === 'POST') {
             if (Auth::entrar($_POST['email'] ?? '', $_POST['senha'] ?? '')) redirecionar('/');
-            $erro = 'E-mail ou senha incorretos.';
+            // senha certa, mas o usuário foi removido do SAC (o login dele no sistema de produção continua)
+            $certo = Auth::conferirSenha($_POST['email'] ?? '', $_POST['senha'] ?? '');
+            $erro = $certo && Usuarios::removido($certo)
+                ? 'Seu acesso ao SAC foi removido. Fale com um administrador.'
+                : 'E-mail ou senha incorretos.';
         }
         view('login', ['erro' => $erro, 'email' => $_POST['email'] ?? ''], false);
         exit;
@@ -185,7 +189,7 @@ try {
     }
 
     /* ---------- usuários (só administradores) ---------- */
-    if (preg_match('#^/usuarios(?:/([A-Za-z0-9]+)(/excluir)?)?$#', $rota, $m)) {
+    if (preg_match('#^/usuarios(?:/([A-Za-z0-9]+)(/excluir|/restaurar)?)?$#', $rota, $m)) {
         if (!Auth::admin()) {
             http_response_code(403);
             view('erro', ['titulo' => 'Acesso restrito', 'msg' => 'Somente administradores podem gerenciar usuários.']);
@@ -209,16 +213,29 @@ try {
 
         $alvo = Usuarios::buscar($m[1]) ?? throw new DomainException('Usuário não encontrado.');
 
-        // exclusão (só usuários criados pelo SAC, nunca o próprio)
-        if (!empty($m[2])) {
+        $nomeAlvo = $alvo['nome'] ?? $alvo['email'];
+
+        // exclusão: usuário do SAC é apagado; do sistema de produção só perde o acesso ao SAC. Nunca o próprio.
+        if (($m[2] ?? '') === '/excluir') {
             if ($metodo !== 'POST') redirecionar('/usuarios/' . $alvo['id']);
             $falha = Usuarios::excluir($alvo, $usuario);
             if ($falha) {
                 avisar($falha, 'erro');
                 redirecionar('/usuarios/' . $alvo['id']);
             }
-            avisar('Usuário ' . ($alvo['nome'] ?? $alvo['email']) . ' excluído.');
+            avisar(Usuarios::ehDoSac($alvo)
+                ? "Usuário $nomeAlvo excluído."
+                : "$nomeAlvo não acessa mais o SAC. O login no sistema de produção continua funcionando.");
             redirecionar('/usuarios');
+        }
+
+        // devolve o acesso ao SAC a um usuário do sistema de produção removido
+        if (($m[2] ?? '') === '/restaurar') {
+            if ($metodo === 'POST' && Usuarios::removido($alvo)) {
+                Usuarios::restaurar($alvo, $usuario);
+                avisar("$nomeAlvo voltou a ter acesso ao SAC.");
+            }
+            redirecionar('/usuarios/' . $alvo['id']);
         }
 
         // edição

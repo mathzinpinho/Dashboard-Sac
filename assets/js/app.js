@@ -109,7 +109,8 @@
       const q = busca.value.trim().toLowerCase();
       let visiveis = 0;
       linhas.forEach((tr) => {
-        const ok = (!origem || tr.dataset.origem === origem) && (!q || tr.dataset.texto.includes(q));
+        // "Todos" não mostra os removidos do SAC; eles têm filtro próprio
+        const ok = (origem ? tr.dataset.origem === origem : tr.dataset.origem !== 'removido') && (!q || tr.dataset.texto.includes(q));
         tr.hidden = !ok;
         if (ok) visiveis++;
       });
