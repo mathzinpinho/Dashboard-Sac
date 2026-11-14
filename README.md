@@ -6,9 +6,16 @@ Os campos seguem a aba **SAC** da planilha `planilha SAC.xlsx`, e o dashboard re
 - **Linguagem:** PHP 8.3+ (sem frameworks e sem Composer)
 - **Banco:** o mesmo MongoDB do sistema de produção (homolog), na coleção `sac_reclamacoes`
 - **Login:** os mesmos usuários do sistema de produção (coleção `usuarios`). Só administradores podem excluir reclamações.
-- **Usuários:** administradores cadastram usuários do SAC em `/usuarios`. Eles são gravados com cargo `operador` e área `sac`:
-  entram no SAC e, no sistema de produção, não veem nenhum módulo. Se um administrador editar um desses usuários pela tela
-  do sistema de produção, a área vira `todas` lá.
+- **Usuários:** `/usuarios` (só administradores) lista todos os usuários da coleção, do SAC e do sistema de produção.
+  Em **Editar**, o administrador liga e desliga, com chaves, as telas que cada usuário vê (Dashboard, Reclamações,
+  Nova reclamação, Importar planilha). As mudanças valem no próximo clique do usuário, sem sair e entrar.
+  - Usuários criados pelo SAC (cargo `operador`, área `sac`) podem ter nome, e-mail, tipo e senha alterados e ser excluídos.
+    No sistema de produção eles não veem nenhum módulo. Se um administrador editar um desses usuários pela tela do sistema
+    de produção, a área vira `todas` lá.
+  - Usuários do sistema de produção: aqui só se ajustam as telas do SAC. Senha, cargo e exclusão continuam sendo feitos por lá.
+  - Campos próprios do SAC na coleção `usuarios` (o sistema de produção ignora): `telasSac` (telas liberadas; sem o campo,
+    todas) e `cargoSac` (`administrador` ou `operador` dentro do SAC, sem mexer no `cargo` da produção).
+  - Administradores (`cargo` ou `cargoSac` = `administrador`) veem todas as telas. Ninguém pode se rebaixar nem se excluir.
 
 ## Telas
 
@@ -19,6 +26,7 @@ Os campos seguem a aba **SAC** da planilha `planilha SAC.xlsx`, e o dashboard re
 | `/reclamacoes/nova` | Registro de nova reclamação |
 | `/reclamacoes/{id}` | Edição e finalização (o tempo de resolução é calculado sozinho) |
 | `/importar` | Importa a planilha .xlsx ou .csv, com prévia. Linhas que já foram importadas são ignoradas |
+| `/usuarios` | Lista de usuários; `/usuarios/{id}` edita tipo, telas liberadas, senha e exclusão (só administradores) |
 
 **Valor gasto:** cada reclamação tem o campo *Valor gasto (R$)* (cupom, reembolso, reenvio...). O dashboard mostra o custo total,
 por mês, por reclamação e por produto (SAC com vários produtos divide o valor igualmente entre eles). A importação reconhece as colunas

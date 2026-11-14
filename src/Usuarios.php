@@ -84,9 +84,11 @@ final class Usuarios
     /** Nome e e-mail validados; $id = usuário que está sendo editado (para o e-mail único) */
     private static function validarDados(array $in, array &$erros, ?string $id = null): array
     {
+        // texto que não veio em UTF-8 é convertido; o banco só aceita UTF-8
+        $utf8 = fn($v) => mb_check_encoding($v = (string) $v, 'UTF-8') ? $v : mb_convert_encoding($v, 'UTF-8', 'Windows-1252');
         $d = [
-            'nome'  => trim((string) ($in['nome'] ?? '')),
-            'email' => mb_strtolower(trim((string) ($in['email'] ?? ''))),
+            'nome'  => trim($utf8($in['nome'] ?? '')),
+            'email' => mb_strtolower(trim($utf8($in['email'] ?? ''))),
         ];
         if (mb_strlen($d['nome']) < 2) $erros['nome'] = 'Informe o nome.';
         if (!filter_var($d['email'], FILTER_VALIDATE_EMAIL)) {

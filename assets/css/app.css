@@ -560,6 +560,8 @@ a.kpi:hover { border-color: var(--borda-forte); background: var(--superficie-2);
 .aviso-info { background: var(--info-suave); border-color: rgba(110, 168, 238, 0.35); color: #cfe2fa; }
 .aviso-info .icone { color: var(--info); }
 .span-2 { grid-column: span 2; }
+input[readonly] { background: var(--superficie-2); border-color: var(--borda); color: var(--texto-2); cursor: default; }
+input[readonly]:hover, input[readonly]:focus { border-color: var(--borda); box-shadow: none; }
 .novo-usuario:not([open]) { display: none; }
 .novo-usuario > summary { list-style: none; }
 .filtros-usuarios { padding: 12px 20px; border-bottom: 1px solid var(--borda); }

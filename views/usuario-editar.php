@@ -83,7 +83,7 @@ $adminFixo = !$sac && $admin;
                 <?php foreach (Usuarios::TELAS as $chave => [$rotulo, $desc]): ?>
                     <label class="tela-linha">
                         <span><strong><?= e($rotulo) ?></strong><small><?= e($desc) ?></small></span>
-                        <input type="checkbox" role="switch" class="chave" name="telas[]" value="<?= e($chave) ?>" <?= in_array($chave, $marcadas, true) ? 'checked' : '' ?>>
+                        <input type="checkbox" role="switch" class="chave" name="telas[]" value="<?= e($chave) ?>" aria-label="<?= e($rotulo) ?>" <?=in_array($chave, $marcadas, true) ? 'checked' : '' ?>>
                     </label>
                 <?php endforeach ?>
                 <p class="dica-telas" data-dica-admin<?= $admin ? '' : ' hidden' ?>><?= icone('cadeado', 14) ?>Administradores veem todas as telas. As chaves valem se ele voltar a ser Operador.</p>
