@@ -161,6 +161,8 @@ final class Xlsx
         }
         $xml .= '<pageMargins left="0.4" right="0.4" top="0.5" bottom="0.5" header="0.3" footer="0.3"/>'
             . '<pageSetup paperSize="9" orientation="' . ($paisagem ? 'landscape' : 'portrait') . '" fitToWidth="1" fitToHeight="0"/>'
+            // códigos como lote "101" ficam como texto de propósito: sem o aviso verde de "número armazenado como texto"
+            . '<ignoredErrors><ignoredError sqref="A1:' . self::coluna($maxCol) . $maxLin . '" numberStoredAsText="1"/></ignoredErrors>'
             . '</worksheet>';
         return $xml;
     }

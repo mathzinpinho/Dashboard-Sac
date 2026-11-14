@@ -250,9 +250,9 @@ final class Planilha
     /** colunas de texto longo (quebram linha) */
     private const LONGAS = ['produto', 'descricao', 'solucao', 'observacoes'];
     private const LARGURAS = [
-        'data' => 12, 'hora' => 9, 'codigo_pedido' => 15, 'cliente' => 24, 'razao_social' => 32, 'contato' => 17,
-        'tipo' => 14, 'data_fabricacao' => 14, 'lote' => 12, 'lote_horario' => 15, 'produto' => 36, 'descricao' => 45,
-        'solucao' => 45, 'valor' => 15, 'data_finalizacao' => 14, 'hora_finalizacao' => 13, 'observacoes' => 38,
+        'data' => 12, 'hora' => 10, 'codigo_pedido' => 18, 'cliente' => 24, 'razao_social' => 32, 'contato' => 17,
+        'tipo' => 15, 'data_fabricacao' => 15, 'lote' => 12, 'lote_horario' => 17, 'produto' => 36, 'descricao' => 45,
+        'solucao' => 45, 'valor' => 18, 'data_finalizacao' => 15, 'hora_finalizacao' => 15, 'observacoes' => 38,
     ];
 
     /**
@@ -387,7 +387,7 @@ final class Planilha
 
         $larguras = [8];
         foreach ($campos as $c) $larguras[] = self::LARGURAS[$c] ?? 16;
-        array_push($larguras, 13, 16);
+        array_push($larguras, 18, 17);
 
         $x->aba('SAC', $linhas, [
             'larguras'       => $larguras,
@@ -425,7 +425,7 @@ final class Planilha
             if (!$itens) $itens = [['Nenhum registro no período', null, 'texto', null]];
             foreach ($itens as $i => [$rotulo, $valor, $tipo, $pct]) {
                 $s = $est[$i % 2];
-                $linhas[$n++] = ['altura' => 20, 'celulas' => [
+                $linhas[$n++] = ['celulas' => [
                     ['v' => (string) $rotulo, 's' => $s['rotulo']],
                     ['v' => $valor, 's' => $s[$tipo]],
                     ['v' => $pct, 's' => $s['pct']],
