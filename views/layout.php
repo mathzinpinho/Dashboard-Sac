@@ -39,7 +39,8 @@ if (Auth::admin()) {
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
-    <link rel="stylesheet" href="/assets/css/app.css?v=18">
+    <link rel="preload" href="/assets/fonts/mars-twist.otf" as="font" type="font/otf" crossorigin>
+    <link rel="stylesheet" href="/assets/css/app.css?v=19">
 </head>
 <body>
 <div class="app">
